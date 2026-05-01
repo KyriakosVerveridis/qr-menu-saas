@@ -1,2 +1,4 @@
+from .models import Restaurant
+
 def get_user_restaurants(user):
-    return user.restaurants.all()  # Return all restaurants owned by the given user
+    return Restaurant.objects.filter(owner=user)
