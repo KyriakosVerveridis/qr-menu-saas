@@ -31,4 +31,5 @@ urlpatterns = [
 
     # Apps
     path('api/', include('apps.restaurants.urls')),
+    path('api/menu/', include('apps.menus.urls')),
 ]
