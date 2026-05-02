@@ -3,6 +3,8 @@ from .models import MenuItem
 
 
 class PublicMenuItemSerializer(serializers.ModelSerializer):
+    category = serializers.CharField(source="category.name")
+    
     class Meta:
         model = MenuItem
         fields = [
