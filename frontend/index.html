@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>QR Menu Pro</title>
+    <link rel="icon" href="data:,">
+    
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .active-category { border-bottom: 3px solid #ef4444; color: #ef4444 !important; }
+        
+        /* Skeleton Animation */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .skeleton {
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            background-color: #e5e7eb;
+        }
+        body.dark .skeleton {
+        background-color: #262626;
+        }
+
+        #dark-icon {
+        width: 20px;
+        height: 17px;
+        display: inline-block;
+        }
+
+        /* Dark Mode Custom Colors */
+        body.dark { background-color: #121212; color: #e5e7eb; }
+        body.dark header, body.dark nav { background-color: #1e1e1e; border-color: #333; }
+        body.dark .bg-white { background-color: #1e1e1e; border-color: #333; }
+        body.dark .text-gray-900 { color: #ffffff; }
+        body.dark .text-gray-600, body.dark .text-gray-500 { color: #9ca3af; }
+        body.dark .border-gray-100 { border-color: #333; }
+        body.dark .bg-gray-50 { background-color: #121212; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 transition-colors duration-300">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50 transition-colors duration-300">
+        <div class="p-4 flex justify-between items-center max-w-lg mx-auto">
+            <h1 class="font-black text-xl tracking-tight">PIZZA <span class="text-red-600">ANDREAS</span></h1>
+            
+            <div class="flex items-center gap-2">
+                <button onclick="toggleDarkMode()" class="p-2 rounded-xl bg-gray-50 border border-gray-200 transition-all text-gray-600 hover:bg-gray-100 dark:bg-neutral-800 dark:border-neutral-700 dark:text-gray-300">
+                    <i id="dark-icon" data-lucide="moon" class="w-5 h-5"></i>
+                </button>
+
+                <div class="relative inline-block text-left" id="lang-menu">
+                    <button onclick="toggleLangDropdown()" class="flex items-center gap-2 text-xs font-bold bg-gray-50 px-3 py-2 rounded-xl border border-gray-200 dark:bg-neutral-800 dark:border-neutral-700 dark:text-white">
+                        <span id="current-lang-text">ΕΛΛΗΝΙΚΑ</span>
+                    </button>
+                    <div id="lang-dropdown" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-[100] dark:bg-neutral-800 dark:border-neutral-700">
+                        <button onclick="selectLang('GR', 'ΕΛΛΗΝΙΚΑ')" class="w-full text-left px-4 py-3 text-xs font-bold border-b border-gray-50 dark:border-neutral-700 dark:text-white">ΕΛΛΗΝΙΚΑ</button>
+                        <button onclick="selectLang('EN', 'ENGLISH')" class="w-full text-left px-4 py-3 text-xs font-bold border-b border-gray-50 dark:border-neutral-700 dark:text-white">ENGLISH</button>
+                        <button onclick="selectLang('BG', 'БЪΛГАРΣΚИ')" class="w-full text-left px-4 py-3 text-xs font-bold border-b border-gray-50 dark:border-neutral-700 dark:text-white">БЪΛГАРΣΚИ</button>
+                        <button onclick="selectLang('RS', 'SRPSKI')" class="w-full text-left px-4 py-3 text-xs font-bold border-b border-gray-50 dark:border-neutral-700 dark:text-white">SRPSKI</button>
+                        <button onclick="selectLang('RO', 'ROMÂNĂ')" class="w-full text-left px-4 py-3 text-xs font-bold border-b border-gray-50 dark:border-neutral-700 dark:text-white">ROMÂNĂ</button>
+                        <button onclick="selectLang('DE', 'DEUTSCH')" class="w-full text-left px-4 py-3 text-xs font-bold border-b border-gray-50 dark:border-neutral-700 dark:text-white">DEUTSCH</button>
+                        <button onclick="selectLang('TR', 'TÜRKÇE')" class="w-full text-left px-4 py-3 text-xs font-bold dark:text-white">TÜRKÇE</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="w-full flex overflow-x-auto no-scrollbar bg-white border-b border-gray-100 px-4 py-3 gap-3 transition-colors duration-300 dark:bg-neutral-900 dark:border-neutral-800">
+            <button onclick="filterCat('all')" id="cat-all" class="category-item active-category whitespace-nowrap pb-1 font-bold text-sm uppercase px-2">Όλα</button>
+            <button onclick="filterCat('pizza')" id="cat-pizza" class="category-item whitespace-nowrap pb-1 font-bold text-sm uppercase text-gray-400 px-2">Πίτσα</button>
+            <button onclick="filterCat('pasta')" id="cat-pasta" class="category-item whitespace-nowrap pb-1 font-bold text-sm uppercase text-gray-400 px-2">Μακαρόνια</button>
+            <button onclick="filterCat('salad')" id="cat-salad" class="category-item whitespace-nowrap pb-1 font-bold text-sm uppercase text-gray-400 px-2">Σαλάτες</button>
+            <button onclick="filterCat('drinks')" id="cat-drinks" class="category-item whitespace-nowrap pb-1 font-bold text-sm uppercase text-gray-400 px-2">Ποτά</button>
+            <button onclick="filterCat('coffee')" id="cat-coffee" class="category-item whitespace-nowrap pb-1 font-bold text-sm uppercase text-gray-400 px-2">Καφές</button>
+            <button onclick="filterCat('icecream')" id="cat-icecream" class="category-item whitespace-nowrap pb-1 font-bold text-sm uppercase text-gray-400 px-2">Παγωτό</button>
+        </nav>
+    </header>
+
+    <main class="max-w-lg mx-auto p-4 space-y-4" id="menu-list">
+        <div class="bg-gray-200 dark:bg-neutral-800 rounded-2xl h-32 w-full skeleton"></div>
+        <div class="bg-gray-200 dark:bg-neutral-800 rounded-2xl h-32 w-full skeleton"></div>
+        <div class="bg-gray-200 dark:bg-neutral-800 rounded-2xl h-32 w-full skeleton"></div>
+        <div class="bg-gray-200 dark:bg-neutral-800 rounded-2xl h-32 w-full skeleton"></div>
+        <div class="bg-gray-200 dark:bg-neutral-800 rounded-2xl h-32 w-full skeleton"></div>
+        <div class="bg-gray-200 dark:bg-neutral-800 rounded-2xl h-32 w-full skeleton"></div>
+    </main>
+
+    <script>
+    // 1. Αρχικοποίηση με έλεγχο στο LocalStorage
+    let menuData = [];
+    let currentLang = localStorage.getItem('prefLang') || 'GR';
+    let currentCat = 'all';
+    let isDark = localStorage.getItem('prefDark') === 'true';
+
+    const url = `http://127.0.0.1:8000/api/menu/public/balaouro/`;
+
+    const catTranslations = {
+        GR: { all: "Όλα", pizza: "Πίτσα", pasta: "Μακαρόνια", salad: "Σαλάτες", drinks: "Ποτά", coffee: "Καφές", icecream: "Παγωτό" },
+        EN: { all: "All", pizza: "Pizza", pasta: "Pasta", salad: "Salads", drinks: "Drinks", coffee: "Coffee", icecream: "Ice Cream" },
+        BG: { all: "Всичко", pizza: "Пица", pasta: "Паста", salad: "Салати", drinks: "Напитки", coffee: "Καфе", icecream: "Сλαδοлед" },
+        RS: { all: "Све", pizza: "Пица", pasta: "Теστεнина", salad: "Саλατε", drinks: "Пића", coffee: "Каφα", icecream: "Сλαδοлед" },
+        RO: { all: "Toate", pizza: "Pizza", pasta: "Paste", salad: "Salate", drinks: "Băuturi", coffee: "Cafea", icecream: "Înghețată" },
+        DE: { all: "Alles", pizza: "Pizza", pasta: "Pasta", salad: "Salate", drinks: "Getränke", coffee: "Kaffee", icecream: "Eis" },
+        TR: { all: "Hepsi", pizza: "Pizza", pasta: "Makarna", salad: "Salatalar", drinks: "İçecekler", coffee: "Kahve", icecream: "Dondurma" }
+    };
+
+    // Βοηθητικό αντικείμενο για τα ονόματα των γλωσσών στο κουμπί
+    const langNames = { GR: 'ΕΛΛΗΝΙΚΑ', EN: 'ENGLISH', BG: 'БЪΛГАРΣΚИ', RS: 'SRPSKI', RO: 'ROMÂNĂ', DE: 'DEUTSCH', TR: 'TÜRKÇE' };
+
+    async function init() {
+        // 1. Load preferences
+        isDark = localStorage.getItem('prefDark') === 'true';
+        currentLang = localStorage.getItem('prefLang') || 'GR';
+        currentCat = localStorage.getItem('prefCat') || 'all';
+
+        // 2. Immediate Theme Apply
+        if (isDark) {
+            document.body.classList.add('dark');
+            const icon = document.getElementById('dark-icon');
+            if (icon) icon.setAttribute('data-lucide', 'sun');
+        }
+
+        // 3. Update UI Labels (using the global langNames)
+        const langText = document.getElementById('current-lang-text');
+        if (langText) langText.innerText = langNames[currentLang] || currentLang;
+
+        // 4. Initial Render from Cache
+        const cached = localStorage.getItem('menu_cache');
+        if (cached) {
+            menuData = JSON.parse(cached);
+            render(); 
+        }
+
+        // 5. Fetch Updates
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Network error');
+            const json = await response.json();
+            
+            menuData = json.flatMap(group => 
+                group.items.map(item => ({ ...item, category: group.category }))
+            );
+
+            localStorage.setItem('menu_cache', JSON.stringify(menuData));
+            render();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        } catch (e) { console.error("Update failed:", e); }
+    }
+
+// Global click handler (Only one!)
+window.onclick = function(event) {
+    const dropdown = document.getElementById('lang-dropdown');
+    if (!event.target.closest('#lang-menu') && dropdown) {
+        dropdown.classList.add('hidden');
+    }
+}
+    
+    
+    function render() {
+        const container = document.getElementById('menu-list');
+        if (!container) return;
+
+        // 1. Update categories
+        const langCats = catTranslations[currentLang];
+        document.querySelectorAll('.category-item').forEach(btn => {
+            const id = btn.id.replace('cat-', '');
+            if (langCats[id]) btn.innerText = langCats[id];
+        });
+
+        const filtered = menuData.filter(item => 
+            currentCat === 'all' || item.category.toLowerCase() === currentCat.toLowerCase()
+        );
+
+        // 2. Create a variable to hold ALL the HTML
+        let fullHtml = ''; 
+
+        filtered.forEach(item => {
+            const isDarkNow = document.body.classList.contains('dark');
+            const textColor = isDarkNow ? "text-white" : "text-gray-900";
+            const itemName = item['name_' + currentLang] || item.name || "N/A";
+            const itemDesc = item['desc_' + currentLang] || "";
+
+            // Add to the string, NOT to the DOM
+            fullHtml += `
+            <div class="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm overflow-hidden flex border border-gray-100 dark:border-neutral-700 h-32 transition-all">
+                <div class="w-32 h-full bg-gray-200">
+                    <img src="${item.image}" class="w-full h-full object-cover" loading="lazy" 
+                        onerror="this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mN8/x8AAuMB8DtXNjkAAAAASUVORK5CYII='">
+                </div>
+                <div class="flex-1 p-3 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-bold text-sm leading-tight ${textColor}">${itemName}</h3>
+                            <span class="font-black ml-2 text-sm ${textColor}">${item.price}€</span>
+                        </div>
+                        <p class="text-[11px] mt-1 line-clamp-2 italic leading-snug text-gray-500 dark:text-gray-400">
+                            ${itemDesc}
+                        </p>
+                    </div>
+                    <div class="text-[9px] uppercase text-gray-400 font-bold tracking-widest">${item.category}</div>
+                </div>
+            </div>`;
+        });
+
+        // 3. Update the DOM ONLY ONCE
+        container.innerHTML = fullHtml;
+    }
+
+    function toggleDarkMode() {
+        const body = document.body;
+        body.classList.toggle('dark');
+        
+        // Save Dark Mode state to localStorage
+        const isDarkNow = body.classList.contains('dark');
+        localStorage.setItem('prefDark', isDarkNow);
+        
+        // Update the icon (Sun/Moon)
+        const icon = document.getElementById('dark-icon');
+        if (icon) {
+            icon.setAttribute('data-lucide', isDarkNow ? 'sun' : 'moon');
+            lucide.createIcons();
+        }
+        render();
+    }
+
+    function filterCat(cat) {
+        currentCat = cat;
+        // Save selected category to localStorage
+        localStorage.setItem('prefCat', cat);
+
+        // Update Navigation UI classes
+        document.querySelectorAll('.category-item').forEach(el => {
+            el.classList.remove('active-category');
+            el.classList.add('text-gray-400');
+        });
+
+        const activeEl = document.getElementById('cat-' + cat);
+        if (activeEl) {
+            activeEl.classList.add('active-category');
+            activeEl.classList.remove('text-gray-400');
+        }
+        render();
+    }
+
+    function toggleLangDropdown() { 
+        // Show or hide the language selection menu
+        document.getElementById('lang-dropdown').classList.toggle('hidden'); 
+    }
+
+    window.onclick = function(event) {
+        // Close the dropdown if the user clicks outside the language menu
+        if (!event.target.closest('#lang-menu')) {
+            const dropdown = document.getElementById('lang-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+        }
+    }
+
+    function selectLang(langCode, langName) {
+        currentLang = langCode;
+        // 4. Αποθήκευση επιλογής Γλώσσας
+        localStorage.setItem('prefLang', langCode);
+        
+        document.getElementById('current-lang-text').innerText = langName;
+        document.getElementById('lang-dropdown').classList.add('hidden');
+        render();
+    }
+
+    window.onclick = function(event) {
+        if (!event.target.closest('#lang-menu')) {
+            const dropdown = document.getElementById('lang-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>
