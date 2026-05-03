@@ -97,8 +97,7 @@
     let currentCat = 'all';
     let isDark = localStorage.getItem('prefDark') === 'true';
 
-    const sheetId = '18b3SbSuBszoc_EZ_rdXSaUqxe3iK_iOosc0V3oQAHgw';
-    const url = `http://127.0.0.1:8000/api/menu/public/1/`;
+    const url = `http://127.0.0.1:8000/api/menu/public/balaouro/`;
 
     const catTranslations = {
         GR: { all: "Όλα", pizza: "Πίτσα", pasta: "Μακαρόνια", salad: "Σαλάτες", drinks: "Ποτά", coffee: "Καφές", icecream: "Παγωτό" },
@@ -114,89 +113,167 @@
     const langNames = { GR: 'ΕΛΛΗΝΙΚΑ', EN: 'ENGLISH', BG: 'БЪΛГАРΣΚИ', RS: 'SRPSKI', RO: 'ROMÂNĂ', DE: 'DEUTSCH', TR: 'TÜRKÇE' };
 
     async function init() {
-        // 2. Εφαρμογή αποθηκευμένων προτιμήσεων πριν το render
-        if (isDark) {
-            document.body.classList.add('dark');
-            document.getElementById('dark-icon').setAttribute('data-lucide', 'sun');
-        }
-        document.getElementById('current-lang-text').innerText = langNames[currentLang];
+        // 1. Load user preferences from localStorage
+        const savedDark = localStorage.getItem('prefDark') === 'true';
+        const savedLang = localStorage.getItem('prefLang') || 'GR';
+        const savedCat = localStorage.getItem('prefCat') || 'all';
 
+        // 2. Set global state variables
+        currentLang = savedLang;
+        currentCat = savedCat;
+
+        // 3. Apply Dark Mode immediately to prevent white flash
+        if (savedDark) {
+            document.body.classList.add('dark');
+            const icon = document.getElementById('dark-icon');
+            if (icon) icon.setAttribute('data-lucide', 'sun');
+        }
+
+        // 4. Update UI labels based on saved language
+        const langText = document.getElementById('current-lang-text');
+        if (langText) {
+            const langNames = { 'GR': 'Ελληνικά', 'EN': 'English' };
+            langText.innerText = langNames[currentLang] || currentLang;
+        }
+
+        // 5. Highlight the saved category in the navigation
+        const activeBtn = document.getElementById('cat-' + currentCat);
+        if (activeBtn) {
+            document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active-category'));
+            activeBtn.classList.add('active-category');
+        }
+
+        // 6. Load data from cache for instant initial render
+        const cached = localStorage.getItem('menu_cache');
+        if (cached) {
+            menuData = JSON.parse(cached);
+            render(); 
+        }
+
+        // 7. Fetch fresh data from the API
         try {
             const response = await fetch(url);
+            if (!response.ok) throw new Error('Network response was not ok');
             const json = await response.json();
-            menuData = json;
+            
+            // Flatten nested JSON structure (Categories -> Items)
+            const flattened = json.flatMap(group => 
+                group.items.map(item => ({ 
+                    ...item, 
+                    category: group.category 
+                }))
+            );
+
+            // 8. Update memory, save to cache, and refresh UI
+            menuData = flattened;
+            localStorage.setItem('menu_cache', JSON.stringify(flattened));
             
             render();
-            lucide.createIcons();
-        } catch (e) { console.error(e); }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        } catch (e) { 
+            console.error("Initialization Error:", e); 
+        }
     }
-
+    
+    
     function render() {
         const container = document.getElementById('menu-list');
-        container.innerHTML = ''; 
+        if (!container) return;
 
+        // 1. Update categories
         const langCats = catTranslations[currentLang];
         document.querySelectorAll('.category-item').forEach(btn => {
             const id = btn.id.replace('cat-', '');
-            if(langCats[id]) btn.innerText = langCats[id];
+            if (langCats[id]) btn.innerText = langCats[id];
         });
 
-        const filtered = menuData.filter(item => currentCat === 'all' || item.category.toLowerCase() === currentCat.toLowerCase());
+        const filtered = menuData.filter(item => 
+            currentCat === 'all' || item.category.toLowerCase() === currentCat.toLowerCase()
+        );
+
+        // 2. Create a variable to hold ALL the HTML
+        let fullHtml = ''; 
 
         filtered.forEach(item => {
             const isDarkNow = document.body.classList.contains('dark');
             const textColor = isDarkNow ? "text-white" : "text-gray-900";
-            
-            container.innerHTML += `
+            const itemName = item['name_' + currentLang] || item.name || "N/A";
+            const itemDesc = item['desc_' + currentLang] || "";
+
+            // Add to the string, NOT to the DOM
+            fullHtml += `
             <div class="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm overflow-hidden flex border border-gray-100 dark:border-neutral-700 h-32 transition-all">
                 <div class="w-32 h-full bg-gray-200">
-                    <img src="${item.image}" class="w-full h-full object-cover" loading="lazy">
+                    <img src="${item.image}" class="w-full h-full object-cover" loading="lazy" 
+                        onerror="this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mN8/x8AAuMB8DtXNjkAAAAASUVORK5CYII='">
                 </div>
                 <div class="flex-1 p-3 flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-start">
-                            <h3 class="font-bold text-sm leading-tight ${textColor}">${item['name_' + currentLang]}</h3>
+                            <h3 class="font-bold text-sm leading-tight ${textColor}">${itemName}</h3>
                             <span class="font-black ml-2 text-sm ${textColor}">${item.price}€</span>
                         </div>
                         <p class="text-[11px] mt-1 line-clamp-2 italic leading-snug text-gray-500 dark:text-gray-400">
-                            ${item['desc_' + currentLang]}
+                            ${itemDesc}
                         </p>
                     </div>
                     <div class="text-[9px] uppercase text-gray-400 font-bold tracking-widest">${item.category}</div>
                 </div>
             </div>`;
         });
+
+        // 3. Update the DOM ONLY ONCE
+        container.innerHTML = fullHtml;
     }
 
     function toggleDarkMode() {
         const body = document.body;
         body.classList.toggle('dark');
         
-        // 3. Αποθήκευση επιλογής Dark Mode
-        isDark = body.classList.contains('dark');
-        localStorage.setItem('prefDark', isDark);
+        // Save Dark Mode state to localStorage
+        const isDarkNow = body.classList.contains('dark');
+        localStorage.setItem('prefDark', isDarkNow);
         
+        // Update the icon (Sun/Moon)
         const icon = document.getElementById('dark-icon');
-        icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
-        lucide.createIcons();
+        if (icon) {
+            icon.setAttribute('data-lucide', isDarkNow ? 'sun' : 'moon');
+            lucide.createIcons();
+        }
         render();
     }
 
     function filterCat(cat) {
         currentCat = cat;
+        // Save selected category to localStorage
+        localStorage.setItem('prefCat', cat);
+
+        // Update Navigation UI classes
         document.querySelectorAll('.category-item').forEach(el => {
             el.classList.remove('active-category');
             el.classList.add('text-gray-400');
         });
+
         const activeEl = document.getElementById('cat-' + cat);
-        if(activeEl) {
+        if (activeEl) {
             activeEl.classList.add('active-category');
             activeEl.classList.remove('text-gray-400');
         }
         render();
     }
 
-    function toggleLangDropdown() { document.getElementById('lang-dropdown').classList.toggle('hidden'); }
+    function toggleLangDropdown() { 
+        // Show or hide the language selection menu
+        document.getElementById('lang-dropdown').classList.toggle('hidden'); 
+    }
+
+    window.onclick = function(event) {
+        // Close the dropdown if the user clicks outside the language menu
+        if (!event.target.closest('#lang-menu')) {
+            const dropdown = document.getElementById('lang-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+        }
+    }
 
     function selectLang(langCode, langName) {
         currentLang = langCode;
