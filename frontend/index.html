@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>QR Menu Pro</title>
+    <link rel="icon" href="data:,">
     
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -113,67 +114,52 @@
     const langNames = { GR: 'ΕΛΛΗΝΙΚΑ', EN: 'ENGLISH', BG: 'БЪΛГАРΣΚИ', RS: 'SRPSKI', RO: 'ROMÂNĂ', DE: 'DEUTSCH', TR: 'TÜRKÇE' };
 
     async function init() {
-        // 1. Load user preferences from localStorage
-        const savedDark = localStorage.getItem('prefDark') === 'true';
-        const savedLang = localStorage.getItem('prefLang') || 'GR';
-        const savedCat = localStorage.getItem('prefCat') || 'all';
+        // 1. Load preferences
+        isDark = localStorage.getItem('prefDark') === 'true';
+        currentLang = localStorage.getItem('prefLang') || 'GR';
+        currentCat = localStorage.getItem('prefCat') || 'all';
 
-        // 2. Set global state variables
-        currentLang = savedLang;
-        currentCat = savedCat;
-
-        // 3. Apply Dark Mode immediately to prevent white flash
-        if (savedDark) {
+        // 2. Immediate Theme Apply
+        if (isDark) {
             document.body.classList.add('dark');
             const icon = document.getElementById('dark-icon');
             if (icon) icon.setAttribute('data-lucide', 'sun');
         }
 
-        // 4. Update UI labels based on saved language
+        // 3. Update UI Labels (using the global langNames)
         const langText = document.getElementById('current-lang-text');
-        if (langText) {
-            const langNames = { 'GR': 'Ελληνικά', 'EN': 'English' };
-            langText.innerText = langNames[currentLang] || currentLang;
-        }
+        if (langText) langText.innerText = langNames[currentLang] || currentLang;
 
-        // 5. Highlight the saved category in the navigation
-        const activeBtn = document.getElementById('cat-' + currentCat);
-        if (activeBtn) {
-            document.querySelectorAll('.category-item').forEach(el => el.classList.remove('active-category'));
-            activeBtn.classList.add('active-category');
-        }
-
-        // 6. Load data from cache for instant initial render
+        // 4. Initial Render from Cache
         const cached = localStorage.getItem('menu_cache');
         if (cached) {
             menuData = JSON.parse(cached);
             render(); 
         }
 
-        // 7. Fetch fresh data from the API
+        // 5. Fetch Updates
         try {
             const response = await fetch(url);
-            if (!response.ok) throw new Error('Network response was not ok');
+            if (!response.ok) throw new Error('Network error');
             const json = await response.json();
             
-            // Flatten nested JSON structure (Categories -> Items)
-            const flattened = json.flatMap(group => 
-                group.items.map(item => ({ 
-                    ...item, 
-                    category: group.category 
-                }))
+            menuData = json.flatMap(group => 
+                group.items.map(item => ({ ...item, category: group.category }))
             );
 
-            // 8. Update memory, save to cache, and refresh UI
-            menuData = flattened;
-            localStorage.setItem('menu_cache', JSON.stringify(flattened));
-            
+            localStorage.setItem('menu_cache', JSON.stringify(menuData));
             render();
             if (typeof lucide !== 'undefined') lucide.createIcons();
-        } catch (e) { 
-            console.error("Initialization Error:", e); 
-        }
+        } catch (e) { console.error("Update failed:", e); }
     }
+
+// Global click handler (Only one!)
+window.onclick = function(event) {
+    const dropdown = document.getElementById('lang-dropdown');
+    if (!event.target.closest('#lang-menu') && dropdown) {
+        dropdown.classList.add('hidden');
+    }
+}
     
     
     function render() {
