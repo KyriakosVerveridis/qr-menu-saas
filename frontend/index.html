@@ -98,7 +98,12 @@
     let currentCat = 'all';
     let isDark = localStorage.getItem('prefDark') === 'true';
 
-    const url = `http://127.0.0.1:8000/api/menu/public/balaouro/`;
+    // Read the restaurant slug dynamically from the URL parameter (e.g., ?restaurant=open)
+    const urlParams = new URLSearchParams(window.location.search);
+    const restaurantSlug = urlParams.get('restaurant') || 'open'; 
+
+    // Dynamic API URL generation
+    const url = `http://127.0.0.1:8000/api/menu/public/${restaurantSlug}/`;
 
     const catTranslations = {
         GR: { all: "Όλα", pizza: "Πίτσα", pasta: "Μακαρόνια", salad: "Σαλάτες", drinks: "Ποτά", coffee: "Καφές", icecream: "Παγωτό" },
@@ -152,41 +157,44 @@
             if (typeof lucide !== 'undefined') lucide.createIcons();
         } catch (e) { console.error("Update failed:", e); }
     }
-
-// Global click handler (Only one!)
-window.onclick = function(event) {
-    const dropdown = document.getElementById('lang-dropdown');
-    if (!event.target.closest('#lang-menu') && dropdown) {
-        dropdown.classList.add('hidden');
-    }
-}
     
     
     function render() {
         const container = document.getElementById('menu-list');
         if (!container) return;
 
-        // 1. Update categories
+        // 1. Update categories text in UI
         const langCats = catTranslations[currentLang];
         document.querySelectorAll('.category-item').forEach(btn => {
             const id = btn.id.replace('cat-', '');
             if (langCats[id]) btn.innerText = langCats[id];
         });
 
-        const filtered = menuData.filter(item => 
-            currentCat === 'all' || item.category.toLowerCase() === currentCat.toLowerCase()
-        );
+        // 2. Filter items based on selected category (category.GR or category.EN etc.)
+        const filtered = menuData.filter(item => {
+            if (currentCat === 'all') return true;
+            
+            // Get the current selected category key from translations (e.g., "coffee", "drinks")
+            const activeTranslation = catTranslations[currentLang][currentCat]?.toLowerCase();
+            if (!activeTranslation) return false;
 
-        // 2. Create a variable to hold ALL the HTML
+            // Check if ANY language of the item's category matches our active translation
+            return Object.values(item.category).some(val => 
+                val?.toLowerCase() === activeTranslation
+            );
+        });
+
         let fullHtml = ''; 
 
         filtered.forEach(item => {
             const isDarkNow = document.body.classList.contains('dark');
             const textColor = isDarkNow ? "text-white" : "text-gray-900";
-            const itemName = item['name_' + currentLang] || item.name || "N/A";
-            const itemDesc = item['desc_' + currentLang] || "";
+            
+            // NEW MULTILINGUAL LOGIC FOR JSON FIELDS
+            const itemName = item.name[currentLang] || item.name['GR'] || "N/A";
+            const itemDesc = item.description ? (item.description[currentLang] || item.description['GR'] || "") : "";
+            const itemCatName = item.category[currentLang] || item.category['GR'] || "";
 
-            // Add to the string, NOT to the DOM
             fullHtml += `
             <div class="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm overflow-hidden flex border border-gray-100 dark:border-neutral-700 h-32 transition-all">
                 <div class="w-32 h-full bg-gray-200">
@@ -203,12 +211,11 @@ window.onclick = function(event) {
                             ${itemDesc}
                         </p>
                     </div>
-                    <div class="text-[9px] uppercase text-gray-400 font-bold tracking-widest">${item.category}</div>
+                    <div class="text-[9px] uppercase text-gray-400 font-bold tracking-widest">${itemCatName}</div>
                 </div>
             </div>`;
         });
 
-        // 3. Update the DOM ONLY ONCE
         container.innerHTML = fullHtml;
     }
 
@@ -251,14 +258,6 @@ window.onclick = function(event) {
     function toggleLangDropdown() { 
         // Show or hide the language selection menu
         document.getElementById('lang-dropdown').classList.toggle('hidden'); 
-    }
-
-    window.onclick = function(event) {
-        // Close the dropdown if the user clicks outside the language menu
-        if (!event.target.closest('#lang-menu')) {
-            const dropdown = document.getElementById('lang-dropdown');
-            if (dropdown) dropdown.classList.add('hidden');
-        }
     }
 
     function selectLang(langCode, langName) {
