@@ -4,17 +4,14 @@ from django.utils.text import slugify
 
 User = get_user_model()
 
-
+# --- RESTAURANT MODEL ---
 class Restaurant(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
-
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="restaurants")
-    
     address = models.TextField()
     phone_number = models.CharField(max_length=15)
     email = models.EmailField(blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

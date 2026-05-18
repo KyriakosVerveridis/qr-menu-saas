@@ -2,39 +2,43 @@ from django.db import models
 from apps.restaurants.models import Restaurant
 
 class MenuCategory(models.Model):
-    name = models.CharField(max_length=255)
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name="menu_categories")
+    
+    # We use JSONField to support multiple languages for the category too (e.g., {"GR": "Ορεκτικά", "EN": "Appetizers"})
+    name = models.JSONField(default=dict) 
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.name
+        return str(self.name.get('GR', 'Unnamed Category'))
+    
 
+    # --- MENU ITEM MODEL ---
 class MenuItem(models.Model):
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name="menu_items")
     category = models.ForeignKey(MenuCategory, on_delete=models.CASCADE, related_name="menu_items")
     price = models.DecimalField(max_digits=10, decimal_places=2)
     image = models.URLField(blank=True)
 
-    name_GR = models.CharField(max_length=255)
-    desc_GR = models.TextField(blank=True)
+    # Plain text fields for 2 languages (Greek / English)
+    name_gr = models.CharField(max_length=255, verbose_name="Όνομα (Ελληνικά)", default="")
+    name_en = models.CharField(max_length=255, verbose_name="Όνομα (English)", default="")
+    
+    description_gr = models.TextField(blank=True, verbose_name="Περιγραφή (Ελληνικά)", default="")
+    description_en = models.TextField(blank=True, verbose_name="Περιγραφή (English)", default="")
 
-    name_EN = models.CharField(max_length=255)
-    desc_EN = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    name_BG = models.CharField(max_length=255, blank=True)
-    desc_BG = models.TextField(blank=True)
+    # Automatic JSON structure conversion for the Frontend API
+    @property
+    def name(self):
+        return {"GR": self.name_gr, "EN": self.name_en}
 
-    name_RS = models.CharField(max_length=255, blank=True)
-    desc_RS = models.TextField(blank=True)
+    @property
+    def description(self):
+        return {"GR": self.description_gr, "EN": self.description_en}
 
-    name_RO = models.CharField(max_length=255, blank=True)
-    desc_RO = models.TextField(blank=True)
-
-    name_DE = models.CharField(max_length=255, blank=True)
-    desc_DE = models.TextField(blank=True)
-
-    name_TR = models.CharField(max_length=255, blank=True)
-    desc_TR = models.TextField(blank=True)
-
-    restaurant = models.ForeignKey("restaurants.Restaurant", on_delete=models.CASCADE)
+    def __str__(self):
+        return self.name_gr

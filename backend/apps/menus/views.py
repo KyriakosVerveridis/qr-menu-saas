@@ -1,14 +1,17 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from apps.restaurants.models import Restaurant
+from django.shortcuts import get_object_or_404
 from apps.restaurants.models import Restaurant
 from apps.menus.models import MenuCategory
+from .serializers import PublicMenuItemSerializer
 
 
 @api_view(['GET'])
 def public_menu(request, slug):
-    restaurant = Restaurant.objects.get(slug=slug)
+    # Safe fetch: returns 404 instead of crashing if restaurant doesn't exist
+    restaurant = get_object_or_404(Restaurant, slug=slug)
 
+    # Prefetch items to prevent N+1 database queries
     categories = MenuCategory.objects.filter(
         restaurant=restaurant
     ).prefetch_related("menu_items")
@@ -16,19 +19,12 @@ def public_menu(request, slug):
     data = []
 
     for category in categories:
-        items = []
-
-        for item in category.menu_items.all():
-            items.append({
-                "id": item.id,
-                "name": item.name_GR,
-                "price": item.price,
-                "image": item.image,
-            })
+        # Use our new serializer to handle the JSON fields automatically
+        serializer = PublicMenuItemSerializer(category.menu_items.all(), many=True)
 
         data.append({
-            "category": category.name,
-            "items": items
+            "category": category.name, # Returns the full multilingual JSON object
+            "items": serializer.data
         })
 
     return Response(data)
