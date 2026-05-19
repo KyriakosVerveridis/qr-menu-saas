@@ -23,6 +23,7 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
         localStorage.setItem('user_token', data.access); 
         
         alert('Login successful!');
-        window.location.href = 'index.html'; 
+        window.location.href = '../dashboard/index.html'; 
     })
+    .catch(error => console.error('Error:', error));
 });
