@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Merchant Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">QR Menu SaaS</div>
+            
+            <div class="restaurant-selector">
+                <label for="restaurantSelect">Active Shop:</label>
+                <select id="restaurantSelect">
+                    <option value="1">My Café Downtown</option>
+                    <option value="2">My Beach Bar</option>
+                </select>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="#" class="active">Products & Menu</a>
+                <a href="#">Categories</a>
+                <a href="#">Settings</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <h2>Add New Product</h2>
+            
+            <form id="productForm">
+                <label>Name (Greek):</label>
+                <input type="text" id="name_gr" required>
+
+                <label>Name (English):</label>
+                <input type="text" id="name_en" required>
+
+                <label>Description (Greek):</label>
+                <textarea id="description_gr"></textarea>
+
+                <label>Description (English):</label>
+                <textarea id="description_en"></textarea>
+
+                <label>Category:</label>
+                <select id="categorySelect" required>
+                    <option value="" disabled selected>Select a category</option>
+                    <option value="1">Coffee</option>
+                    <option value="2">Pizza</option>
+                    <option value="3">Pasta</option>
+                    <option value="4">Salads</option>
+                    <option value="5">Drinks</option>
+                    <option value="6">Ice Cream</option>
+                </select>
+
+                <label>Price (€):</label>
+                <input type="number" step="0.01" id="price" required>
+
+                <button type="submit">Save to Menu</button>
+            </form>
+        </main>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

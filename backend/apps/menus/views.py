@@ -3,7 +3,12 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from apps.restaurants.models import Restaurant
 from apps.menus.models import MenuCategory
-from .serializers import PublicMenuItemSerializer
+from .serializers import MenuItemCreateSerializer, PublicMenuItemSerializer
+
+from rest_framework.decorators import permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from .models import MenuItem
 
 
 @api_view(['GET'])
@@ -28,3 +33,15 @@ def public_menu(request, slug):
         })
 
     return Response(data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated]) # Lock endpoint with JWT
+def create_menu_item(request):
+    # Use the creation serializer to parse and structure the payload
+    serializer = MenuItemCreateSerializer(data=request.data)
+    
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
