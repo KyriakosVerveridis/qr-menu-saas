@@ -20,10 +20,10 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
     })
     .then(data => {
         // SimpleJWT returns the token as 'access'
-        localStorage.setItem('user_token', data.access); 
+        localStorage.setItem('accessToken', data.access); 
         
         alert('Login successful!');
-        window.location.href = '../dashboard/index.html'; 
+        window.location.href = '../dashboard-v2/index.html'; 
     })
     .catch(error => console.error('Error:', error));
 });
