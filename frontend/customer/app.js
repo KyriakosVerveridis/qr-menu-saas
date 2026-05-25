@@ -6,7 +6,7 @@
 
     // Read the restaurant slug dynamically from the URL parameter (e.g., ?restaurant=open)
     const urlParams = new URLSearchParams(window.location.search);
-    const restaurantSlug = urlParams.get('restaurant') || 'open'; 
+    const restaurantSlug = urlParams.get('restaurant') || 'zaza'; 
 
     // Dynamic API URL generation
     const url = `http://127.0.0.1:8000/api/menu/public/${restaurantSlug}/`;
@@ -65,29 +65,97 @@
     }
     
     
+    // 1. Initialization with LocalStorage check
+    let menuData = [];
+    let currentLang = localStorage.getItem('prefLang') || 'GR';
+    let currentCat = 'all';
+    let isDark = localStorage.getItem('prefDark') === 'true';
+
+    // Read the restaurant slug dynamically from the URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const restaurantSlug = urlParams.get('restaurant') || 'zaza'; 
+
+    // Dynamic API URL generation
+    const url = `http://127.0.0.1:8000/api/menu/public/${restaurantSlug}/`;
+
+    const catTranslations = {
+        GR: { all: "Όλα", pizza: "Πίτσα", pasta: "Μακαρόνια", salad: "Σαλάτες", drinks: "Ποτά", coffee: "Καφές", icecream: "Παγωτό" },
+        EN: { all: "All", pizza: "Pizza", pasta: "Pasta", salad: "Salads", drinks: "Drinks", coffee: "Coffee", icecream: "Ice Cream" },
+        BG: { all: "Всичко", pizza: "Пица", pasta: "Паста", salad: "Салати", drinks: "Напитки", coffee: "Καфе", icecream: "Сλαδοлед" },
+        RS: { all: "Све", pizza: "Пица", pasta: "Теστεнина", salad: "Саλατε", drinks: "Пића", coffee: "Каφα", icecream: "Сλαδοлед" },
+        RO: { all: "Toate", pizza: "Pizza", pasta: "Paste", salad: "Salate", drinks: "Băuturi", coffee: "Cafea", icecream: "Înghețată" },
+        DE: { all: "Alles", pizza: "Pizza", pasta: "Pasta", salad: "Salate", drinks: "Getränke", coffee: "Kaffee", icecream: "Eis" },
+        TR: { all: "Hepsi", pizza: "Pizza", pasta: "Makarna", salad: "Salatalar", drinks: "İçecekler", coffee: "Kahve", icecream: "Dondurma" }
+    };
+
+    const langNames = { GR: 'ΕΛΛΗΝΙΚΑ', EN: 'ENGLISH', BG: 'БЪΛГАРΣΚИ', RS: 'SRPSKI', RO: 'ROMÂNĂ', DE: 'DEUTSCH', TR: 'TÜRKÇE' };
+
+    async function init() {
+        // 1. Load preferences
+        isDark = localStorage.getItem('prefDark') === 'true';
+        currentLang = localStorage.getItem('prefLang') || 'GR';
+        currentCat = localStorage.getItem('prefCat') || 'all';
+
+        // 2. Apply theme
+        if (isDark) {
+            document.body.classList.add('dark');
+            const icon = document.getElementById('dark-icon');
+            if (icon) icon.setAttribute('data-lucide', 'sun');
+        }
+
+        // 3. Update UI Labels
+        const langText = document.getElementById('current-lang-text');
+        if (langText) langText.innerText = langNames[currentLang] || currentLang;
+
+        // 4. Initial Render from Cache
+        const cached = localStorage.getItem('menu_cache');
+        if (cached) {
+            menuData = JSON.parse(cached);
+            render(); 
+        }
+
+        // 5. Fetch Updates
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Network error');
+            const json = await response.json();
+            
+            menuData = json.flatMap(group => 
+                group.items.map(item => ({ ...item, category: group.category }))
+            );
+
+            localStorage.setItem('menu_cache', JSON.stringify(menuData));
+            render();
+        } catch (e) { console.error("Update failed:", e); }
+        
+        // Ensure icons are rendered regardless of fetch success
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    
     function render() {
         const container = document.getElementById('menu-list');
         if (!container) return;
 
         // 1. Update categories text in UI
-        const langCats = catTranslations[currentLang];
+        const langCats = catTranslations[currentLang] || catTranslations['GR'];
         document.querySelectorAll('.category-item').forEach(btn => {
             const id = btn.id.replace('cat-', '');
             if (langCats[id]) btn.innerText = langCats[id];
         });
 
-        // 2. Filter items based on selected category (category.GR or category.EN etc.)
+        // 2. Filter items based on selected category
         const filtered = menuData.filter(item => {
             if (currentCat === 'all') return true;
             
-            // Get the current selected category key from translations (e.g., "coffee", "drinks")
-            const activeTranslation = catTranslations[currentLang][currentCat]?.toLowerCase();
-            if (!activeTranslation) return false;
+            const activeTranslation = catTranslations[currentLang] ? catTranslations[currentLang][currentCat]?.toLowerCase() : null;
+            if (!activeTranslation) return true;
 
-            // Check if ANY language of the item's category matches our active translation
-            return Object.values(item.category).some(val => 
-                val?.toLowerCase() === activeTranslation
-            );
+            // Handle both object (JSONField) and string category types
+            const catValues = (item.category && typeof item.category === 'object') 
+                ? Object.values(item.category) 
+                : [item.category];
+
+            return catValues.some(val => val?.toLowerCase() === activeTranslation);
         });
 
         let fullHtml = ''; 
@@ -96,10 +164,18 @@
             const isDarkNow = document.body.classList.contains('dark');
             const textColor = isDarkNow ? "text-white" : "text-gray-900";
             
-            // NEW MULTILINGUAL LOGIC FOR JSON FIELDS
-            const itemName = item.name[currentLang] || item.name['GR'] || "N/A";
-            const itemDesc = item.description ? (item.description[currentLang] || item.description['GR'] || "") : "";
-            const itemCatName = item.category[currentLang] || item.category['GR'] || "";
+            // Safe JSON access for multilingual fields
+            const itemName = (item.name && typeof item.name === 'object') 
+                ? (item.name[currentLang] || item.name['GR'] || "N/A") 
+                : (item.name || "N/A");
+
+            const itemDesc = (item.description && typeof item.description === 'object') 
+                ? (item.description[currentLang] || item.description['GR'] || "") 
+                : (item.description || "");
+
+            const itemCatName = (item.category && typeof item.category === 'object') 
+                ? (item.category[currentLang] || item.category['GR'] || "") 
+                : (item.category || "");
 
             fullHtml += `
             <div class="bg-white dark:bg-neutral-800 rounded-2xl shadow-sm overflow-hidden flex border border-gray-100 dark:border-neutral-700 h-32 transition-all">
