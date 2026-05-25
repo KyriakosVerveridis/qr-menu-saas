@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'apps.accounts',
     'apps.restaurants',
     'apps.menus',
+    'apps.categories',
     "corsheaders",
 ]
 
