@@ -12,11 +12,9 @@ from apps.categories.models import Category
 
 
 @api_view(['GET'])
-@api_view(['GET'])
 def public_menu(request, slug):
     restaurant = get_object_or_404(Restaurant, slug=slug)
 
-    # ΑΛΛΑΓΗ ΕΔΩ: Χρησιμοποιούμε το νέο μοντέλο Category
     categories = Category.objects.filter(
         restaurant=restaurant
     ).prefetch_related("menu_items")
@@ -24,20 +22,20 @@ def public_menu(request, slug):
     data = []
 
     for category in categories:
-        serializer = PublicMenuItemSerializer(category.menu_items.all(), many=True)
-
-        data.append({
-            # Χρησιμοποίησε το όνομα από το MasterCategory μέσω του Category
-            "category": category.master_category.name, 
-            "items": serializer.data
-        })
+        items = category.menu_items.all()
+        
+        for item in items:
+            serializer = PublicMenuItemSerializer(item)
+            item_data = serializer.data
+            item_data['category'] = category.master_category.name
+            data.append(item_data)
 
     return Response(data)
 
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def create_menu_item(request, pk=None):
-    # 1. Μάθε ποιο κατάστημα ζήτησε το Frontend (από το Query Param ?restaurant=ID)
+    
     restaurant_id = request.query_params.get('restaurant')
     
     if restaurant_id:
