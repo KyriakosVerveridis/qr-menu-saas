@@ -55,10 +55,14 @@ def create_menu_item(request, pk=None):
     if request.method == 'POST':
         serializer = MenuItemCreateSerializer(data=request.data)
         if serializer.is_valid():
-            # Κλειδώνουμε το προϊόν στο κατάστημα που επιλέχθηκε
-            serializer.save(restaurant=user_restaurant)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            category = serializer.validated_data['category']
+            
+            # Έλεγχος ασφαλείας:
+            if category.restaurant != user_restaurant:
+                return Response({"error": "Invalid category for this restaurant"}, status=400)
+            
+        serializer.save(restaurant=user_restaurant)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
     
     # 3. PUT: Ενημέρωση προϊόντος
     if request.method == 'PUT':

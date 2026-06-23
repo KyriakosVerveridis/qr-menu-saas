@@ -10,18 +10,24 @@ export default function ProductForm({ restaurantId, onSave, initialData = null }
   );
 
   useEffect(() => {
-    // Φόρτωση των δικών σου κατηγοριών (όχι της master list)
-    axios.get(`http://127.0.0.1:8000/api/categories/master-list/`, {
+    if (!restaurantId) return;
+
+    // ΠΡΟΣΟΧΗ: Κάλεσε το endpoint που φιλτράρει ανά εστιατόριο
+    axios.get(`http://127.0.0.1:8000/api/categories/my-categories/?restaurant=${restaurantId}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('access')}` }
     })
     .then(res => {
-    setCategories(res.data);
-  })
+      setCategories(res.data); // Τώρα θα πάρεις τα σωστά IDs (11, 12...)
+    })
     .catch(err => console.error("Error fetching categories:", err));
-  }, []);
+  }, [restaurantId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("--- DEBUG SUBMIT ---");
+    console.log("Selected Category ID:", formData.category);
+    console.log("Product Name:", formData.name);
+    console.log("Full FormData:", formData);
     const config = { headers: { Authorization: `Bearer ${localStorage.getItem('access')}` } };
     
     const payload = { 
