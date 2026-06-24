@@ -6,6 +6,7 @@ import MenuEditor from './components/Menu/MenuEditor';
 import StoreSelector from './components/Stores/StoreSelector';
 import MenuPage from './components/MenuPage';
 import ProductList from './components/Products/ProductList';
+import Register from './components/Register/Register';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('access');
@@ -19,6 +20,7 @@ function App() {
       <Routes>
         <Route path="/" element={<h2>Αρχική Σελίδα</h2>} />
         <Route path="/login" element={<Login />} /> 
+        <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
