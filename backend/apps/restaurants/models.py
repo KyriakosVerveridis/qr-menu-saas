@@ -17,8 +17,24 @@ class Restaurant(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            latin_name = unidecode(self.name)
-            self.slug = slugify(latin_name.lower(), allow_unicode=True)
+            # 1. Καθαρισμός ονόματος
+            latin_name = unidecode(self.name).lower().replace(" ", "_")
+            
+            # 2. Ορίζουμε ένα σταθερό πρόθεμα (π.χ. 'gr' για Ελλάδα)
+            prefix = "st" 
+            base_slug = f"{latin_name}_{prefix}"
+            
+            # 3. Έλεγχος για μοναδικότητα με προσθετικό αριθμό
+            new_slug = base_slug
+            counter = 1
+            
+            # Όσο υπάρχει slug στη βάση, αυξάνουμε τον αριθμό
+            while Restaurant.objects.filter(slug=new_slug).exists():
+                new_slug = f"{base_slug}_{counter}"
+                counter += 1
+            
+            self.slug = new_slug
+            
         super().save(*args, **kwargs)
 
     def __str__(self):
