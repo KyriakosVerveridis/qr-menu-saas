@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'apps.menus',
     'apps.categories',
     "corsheaders",
+    'apps.languages',
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
