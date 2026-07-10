@@ -13,23 +13,10 @@ from apps.categories.models import Category
 
 @api_view(['GET'])
 def public_menu(request, slug):
-    # 1. Βρες το εστιατόριο
     restaurant = get_object_or_404(Restaurant, slug=slug)
-
-    # 2. Φιλτράρισε τα MenuItem απευθείας με το restaurant
-    # Έτσι διασφαλίζεις ότι δεν θα δεις προϊόντα άλλου καταστήματος
-    items = MenuItem.objects.filter(restaurant=restaurant).select_related('category')
-
-    # 3. Οργάνωση δεδομένων (πιο καθαρά)
-    data = []
-    for item in items:
-        serializer = PublicMenuItemSerializer(item)
-        item_data = serializer.data
-        # Χρησιμοποίησε το όνομα της κατηγορίας που ανήκει το συγκεκριμένο item
-        item_data['category'] = item.category.master_category.name if item.category else "Uncategorized"
-        data.append(item_data)
-
-    return Response(data)
+    items = MenuItem.objects.filter(restaurant=restaurant).select_related('category__master_category')
+    serializer = PublicMenuItemSerializer(items, many=True)
+    return Response(serializer.data)
 
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
