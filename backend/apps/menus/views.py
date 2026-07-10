@@ -61,15 +61,21 @@ def create_menu_item(request, pk=None):
             if category.restaurant != user_restaurant:
                 return Response({"error": "Invalid category for this restaurant"}, status=400)
             
-        serializer.save(restaurant=user_restaurant)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+            serializer.save(restaurant=user_restaurant)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # 3. PUT: Ενημέρωση προϊόντος
     if request.method == 'PUT':
         item = get_object_or_404(MenuItem, pk=pk, restaurant=user_restaurant)
         serializer = MenuItemCreateSerializer(item, data=request.data, partial=True)
         if serializer.is_valid():
+            category = serializer.validated_data.get('category')
+            if category and category.restaurant != user_restaurant:
+                return Response({"error": "Invalid category for this restaurant"}, status=400)
             serializer.save()
+
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
