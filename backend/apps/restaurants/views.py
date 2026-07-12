@@ -1,10 +1,15 @@
+import io
+import qrcode
+from django.conf import settings
+from django.http import HttpResponse
 from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from .models import Restaurant
 from .serializers import RestaurantSerializer
-
-from rest_framework.permissions import IsAuthenticated
 from .permissions import IsOwner
 from .services import get_user_restaurants
+
 
 class RestaurantViewSet(viewsets.ModelViewSet):
     serializer_class = RestaurantSerializer
@@ -16,3 +21,23 @@ class RestaurantViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+    @action(detail=True, methods=['get'], url_path='qr-code')
+    def qr_code(self, request, pk=None):
+        restaurant = self.get_object()
+        menu_url = f"{settings.FRONTEND_URL}/menu/{restaurant.slug}"
+
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(menu_url)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        buffer.seek(0)
+
+        return HttpResponse(buffer, content_type='image/png')
