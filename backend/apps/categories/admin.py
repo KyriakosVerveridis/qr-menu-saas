@@ -1,17 +1,23 @@
 from django.contrib import admin
-from .models import Category, MasterCategory
+from .models import Category, MasterCategory, MasterCategoryTranslation
+
+
+class MasterCategoryTranslationInline(admin.TabularInline):
+    model = MasterCategoryTranslation
+    extra = 1
+
 
 @admin.register(MasterCategory)
 class MasterCategoryAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name')
-    search_fields = ('name',)
+    list_display = ('id', '__str__')
+    inlines = [MasterCategoryTranslationInline]
+
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('id', 'get_category_name', 'restaurant') 
+    list_display = ('id', 'get_category_name', 'restaurant')
     list_filter = ('restaurant',)
-    search_fields = ('master_category__name',)
 
     def get_category_name(self, obj):
-        return obj.master_category.name
+        return str(obj.master_category)
     get_category_name.short_description = 'Όνομα Κατηγορίας'
