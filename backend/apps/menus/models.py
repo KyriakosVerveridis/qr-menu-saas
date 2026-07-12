@@ -1,20 +1,36 @@
 from django.db import models
 from apps.restaurants.models import Restaurant
 from apps.categories.models import Category
+from apps.languages.models import Language
 
-# --- MENU ITEM MODEL ---
+
 class MenuItem(models.Model):
+    """Container model - το όνομα/περιγραφή ζουν στο MenuItemTranslation."""
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name="menu_items")
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="menu_items")
     price = models.DecimalField(max_digits=10, decimal_places=2)
     image = models.URLField(blank=True)
 
-    # Κράτα μόνο τα Ελληνικά πεδία
-    name = models.CharField(max_length=255, verbose_name="Όνομα")
-    description = models.TextField(blank=True, verbose_name="Περιγραφή")
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.name
+        translation = self.translations.filter(language__code='el').first()
+        return translation.name if translation else f"MenuItem #{self.id}"
+
+
+class MenuItemTranslation(models.Model):
+    menu_item = models.ForeignKey(
+        MenuItem,
+        related_name='translations',
+        on_delete=models.CASCADE
+    )
+    language = models.ForeignKey(Language, on_delete=models.PROTECT)
+    name = models.CharField(max_length=255, verbose_name="Όνομα")
+    description = models.TextField(blank=True, verbose_name="Περιγραφή")
+
+    class Meta:
+        unique_together = ('menu_item', 'language')
+
+    def __str__(self):
+        return f"[{self.language.code}] {self.name}"
