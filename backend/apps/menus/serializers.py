@@ -51,12 +51,8 @@ class MenuItemCreateSerializer(serializers.ModelSerializer):
 
 
 class PublicMenuItemSerializer(serializers.ModelSerializer):
-    category = serializers.SerializerMethodField()
     translations = MenuItemTranslationSerializer(many=True, read_only=True)
 
     class Meta:
         model = MenuItem
-        fields = ["id", "category", "price", "image", "translations"]
-
-    def get_category(self, obj):
-        return str(obj.category.master_category)
+        fields = ["id", "price", "image", "translations"]
