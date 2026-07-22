@@ -1,91 +1,136 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function ProductForm({ restaurantId, onSave, initialData = null }) {
   const [categories, setCategories] = useState([]);
-  // Αν επεξεργαζόμαστε υπάρχον προϊόν, παίρνουμε το ID της κατηγορίας του
-  const [formData, setFormData] = useState(
-    initialData ? { ...initialData, category: initialData.category?.id || initialData.category } 
-                : { name: '', price: '', category: '', description: '' }
-  );
+  const [loading, setLoading] = useState(false);
+
+  const getTranslation = (lang) => {
+    if (!initialData?.translations) return { name: '', description: '' };
+    const t = initialData.translations.find(tr => tr.language_code === lang);
+    return { name: t?.name || '', description: t?.description || '' };
+  };
+
+  const [formData, setFormData] = useState({
+    category: initialData?.category || '',
+    price: initialData?.price || '',
+    name_el: getTranslation('el').name,
+    description_el: getTranslation('el').description,
+    name_en: getTranslation('en').name,
+    description_en: getTranslation('en').description,
+  });
 
   useEffect(() => {
     if (!restaurantId) return;
-
-    // ΠΡΟΣΟΧΗ: Κάλεσε το endpoint που φιλτράρει ανά εστιατόριο
-    axios.get(`http://127.0.0.1:8000/api/categories/my-categories/?restaurant=${restaurantId}`, {
+    axios.get(`${API_URL}/api/categories/my-categories/?restaurant=${restaurantId}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('access')}` }
     })
-    .then(res => {
-      setCategories(res.data); // Τώρα θα πάρεις τα σωστά IDs (11, 12...)
-    })
+    .then(res => setCategories(res.data))
     .catch(err => console.error("Error fetching categories:", err));
   }, [restaurantId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("--- DEBUG SUBMIT ---");
-    console.log("Selected Category ID:", formData.category);
-    console.log("Product Name:", formData.name);
-    console.log("Full FormData:", formData);
-    const config = { headers: { Authorization: `Bearer ${localStorage.getItem('access')}` } };
-    
-    const payload = { 
-      ...formData, 
+    setLoading(true);
+
+    const translations = [
+      { language_code: 'el', name: formData.name_el, description: formData.description_el },
+    ];
+    if (formData.name_en) {
+      translations.push({ language_code: 'en', name: formData.name_en, description: formData.description_en });
+    }
+
+    const payload = {
+      category: parseInt(formData.category),
+      price: formData.price,
       restaurant: restaurantId,
-      category: parseInt(formData.category) // Το στέλνουμε ως ID
+      translations,
     };
+
+    const config = { headers: { Authorization: `Bearer ${localStorage.getItem('access')}` } };
 
     try {
       if (initialData) {
-        await axios.put(`http://127.0.0.1:8000/api/menu/items/${initialData.id}/?restaurant=${restaurantId}`, payload, config);
+        await axios.put(`${API_URL}/api/menu/items/${initialData.id}/?restaurant=${restaurantId}`, payload, config);
       } else {
-        await axios.post(`http://127.0.0.1:8000/api/menu/items/?restaurant=${restaurantId}`, payload, config);
+        await axios.post(`${API_URL}/api/menu/items/?restaurant=${restaurantId}`, payload, config);
       }
-      onSave(); 
+      onSave();
     } catch (err) {
       console.error("Error saving product:", err.response?.data || err);
       alert("Αποτυχία αποθήκευσης. Ελέγξτε την κονσόλα.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white p-6 border rounded-lg shadow-sm space-y-4">
-      <input 
-        className="w-full p-2 border rounded"
-        placeholder="Όνομα Προϊόντος"
-        value={formData.name}
-        onChange={e => setFormData({...formData, name: e.target.value})}
-        required
-      />
-      <input 
-        className="w-full p-2 border rounded"
+    <form onSubmit={handleSubmit} className="bg-white p-6 border border-slate-200 rounded-2xl space-y-4">
+      <div>
+        <label className="text-sm font-medium text-slate-600 mb-1 block">Όνομα (Ελληνικά)</label>
+        <input
+          className="w-full p-2 border border-slate-200 rounded-xl"
+          value={formData.name_el}
+          onChange={e => setFormData({...formData, name_el: e.target.value})}
+          required
+        />
+      </div>
+
+      <div>
+        <label className="text-sm font-medium text-slate-600 mb-1 block">Περιγραφή (Ελληνικά)</label>
+        <textarea
+          className="w-full p-2 border border-slate-200 rounded-xl"
+          value={formData.description_el}
+          onChange={e => setFormData({...formData, description_el: e.target.value})}
+        />
+      </div>
+
+      <div>
+        <label className="text-sm font-medium text-slate-600 mb-1 block">Name (English) — προαιρετικό</label>
+        <input
+          className="w-full p-2 border border-slate-200 rounded-xl"
+          value={formData.name_en}
+          onChange={e => setFormData({...formData, name_en: e.target.value})}
+        />
+      </div>
+
+      <div>
+        <label className="text-sm font-medium text-slate-600 mb-1 block">Description (English)</label>
+        <textarea
+          className="w-full p-2 border border-slate-200 rounded-xl"
+          value={formData.description_en}
+          onChange={e => setFormData({...formData, description_en: e.target.value})}
+        />
+      </div>
+
+      <input
+        className="w-full p-2 border border-slate-200 rounded-xl"
         type="number"
+        step="0.01"
         placeholder="Τιμή"
         value={formData.price}
         onChange={e => setFormData({...formData, price: e.target.value})}
         required
       />
-      <select 
-        className="w-full p-2 border rounded"
+
+      <select
+        className="w-full p-2 border border-slate-200 rounded-xl"
         value={formData.category}
         onChange={e => setFormData({...formData, category: e.target.value})}
         required
       >
         <option value="">-- Επιλέξτε Κατηγορία --</option>
-        {categories && categories.length > 0 ? (
-          categories.map(c => (
-            <option key={c.id} value={c.id}>
-              {c.master_category_name || c.name}
-            </option>
-          ))
-        ) : (
-          <option disabled>Φόρτωση κατηγοριών...</option>
-        )}
+        {categories.map(c => (
+          <option key={c.id} value={c.id}>
+            {c.master_category_name}
+          </option>
+        ))}
       </select>
-      
-      <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded w-full">
-        Αποθήκευση
+
+      <button type="submit" disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold w-full hover:bg-blue-700 transition-colors disabled:opacity-50">
+        {loading ? 'Αποθήκευση...' : 'Αποθήκευση'}
       </button>
     </form>
   );

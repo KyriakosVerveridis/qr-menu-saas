@@ -7,6 +7,7 @@ from apps.restaurants.models import Restaurant
 from .models import MasterCategory, Category
 from .serializers import MasterCategorySerializer, CategorySerializer
 from rest_framework.permissions import AllowAny
+from django.db import IntegrityError
 
 class MasterCategoryListView(APIView):
     # permission_classes = [IsAuthenticated]
@@ -23,7 +24,7 @@ class CategoryListView(APIView):
     def get(self, request):
         restaurant_id = request.query_params.get('restaurant')
         categories = Category.objects.filter(
-            restaurant_id=restaurant_id, 
+            restaurant_id=restaurant_id,
             restaurant__owner=request.user
         )
         serializer = CategorySerializer(categories, many=True)
@@ -33,6 +34,17 @@ class CategoryListView(APIView):
         serializer = CategorySerializer(data=request.data)
         if serializer.is_valid():
             restaurant = get_object_or_404(Restaurant, id=request.data.get('restaurant'), owner=request.user)
-            serializer.save(restaurant=restaurant)
+            try:
+                serializer.save(restaurant=restaurant)
+            except IntegrityError:
+                return Response(
+                    {"error": "Αυτή η κατηγορία υπάρχει ήδη για το συγκεκριμένο κατάστημα."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk=None):
+        category = get_object_or_404(Category, pk=pk, restaurant__owner=request.user)
+        category.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
