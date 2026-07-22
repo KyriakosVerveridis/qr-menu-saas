@@ -15,6 +15,7 @@ function App() {
         <Route path="/" element={<h2>Αρχική Σελίδα</h2>} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/menu/:slug" element={<MenuPage />} />
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
