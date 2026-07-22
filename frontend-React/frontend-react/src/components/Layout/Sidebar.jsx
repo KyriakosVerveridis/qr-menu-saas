@@ -10,7 +10,8 @@ export default function Sidebar() {
   const [stores, setStores] = useState([]);
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { updateRestaurant } = useRestaurant();
+  const [qrCodeUrl, setQrCodeUrl] = useState(null);
+  const { restaurantId, updateRestaurant } = useRestaurant();
   const navigate = useNavigate();
 
   const fetchStores = useCallback(async () => {
@@ -29,6 +30,31 @@ export default function Sidebar() {
   useEffect(() => {
     fetchStores();
   }, [fetchStores]);
+
+  useEffect(() => {
+    if (!restaurantId) {
+      setQrCodeUrl(null);
+      return;
+    }
+
+    let objectUrl;
+    axios.get(`${API_URL}/api/restaurants/${restaurantId}/qr-code/`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('access')}` },
+      responseType: 'blob',
+    })
+    .then(res => {
+      objectUrl = URL.createObjectURL(res.data);
+      setQrCodeUrl(objectUrl);
+    })
+    .catch(err => {
+      console.error("Error fetching QR code:", err);
+      setQrCodeUrl(null);
+    });
+
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [restaurantId]);
 
   const handleSelect = (e) => {
     const id = e.target.value;
@@ -52,6 +78,7 @@ export default function Sidebar() {
           </button>
         </div>
         <select
+          value={restaurantId || ''}
           onChange={handleSelect}
           className="w-full bg-slate-800 text-white px-3 py-2 rounded-lg border border-slate-700"
         >
@@ -63,9 +90,12 @@ export default function Sidebar() {
         {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
       </div>
 
-      <nav className="flex-1 space-y-2">
-        <Link to="/dashboard/products" className="block p-2 hover:bg-slate-800 rounded-lg">Προϊόντα</Link>
-      </nav>
+      {qrCodeUrl && (
+        <div className="mb-6 bg-white p-3 rounded-xl flex flex-col items-center">
+          <img src={qrCodeUrl} alt="QR Code καταστήματος" className="w-32 h-32" />
+          <span className="text-slate-600 text-xs mt-2 font-medium">QR Menu</span>
+        </div>
+      )}
 
       <CreateStore
         isOpen={isModalOpen}
