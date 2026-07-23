@@ -10,10 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+from dotenv import load_dotenv
+import urllib.parse
 from pathlib import Path
 import os
 import dj_database_url
-from dotenv import load_dotenv
+import cloudinary
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -158,3 +160,16 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_REFRESH_TOKENS': False,
 }
+
+# cloudinary.config(
+#     cloudinary_url=os.environ.get('CLOUDINARY_URL')
+# )    
+
+_cloudinary_url = os.environ.get('CLOUDINARY_URL', '')
+_parsed_cloudinary = urllib.parse.urlparse(_cloudinary_url)
+cloudinary.config(
+    cloud_name=_parsed_cloudinary.hostname,
+    api_key=_parsed_cloudinary.username,
+    api_secret=_parsed_cloudinary.password,
+    secure=True,
+)
