@@ -91,9 +91,11 @@ export default function ProductList() {
           </div>
           {showForm && (
             <ProductForm
+              key={editingProduct?.id || 'new'}
               restaurantId={restaurantId}
               initialData={editingProduct}
               onSave={() => { setShowForm(false); fetchProducts(); }}
+              onCancel={() => setShowForm(false)}
             />
           )}
           <div className="grid gap-3 mt-4">

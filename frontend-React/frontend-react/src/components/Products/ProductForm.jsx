@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export default function ProductForm({ restaurantId, onSave, initialData = null }) {
+export default function ProductForm({ restaurantId, onSave, onCancel, initialData = null }) {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState(null);
@@ -161,9 +161,14 @@ export default function ProductForm({ restaurantId, onSave, initialData = null }
         ))}
       </select>
 
-      <button type="submit" disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold w-full hover:bg-blue-700 transition-colors disabled:opacity-50">
-        {loading ? 'Αποθήκευση...' : 'Αποθήκευση'}
-      </button>
+      <div className="flex gap-3">
+        <button type="submit" disabled={loading} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50">
+          {loading ? 'Αποθήκευση...' : 'Αποθήκευση'}
+        </button>
+        <button type="button" onClick={onCancel} className="flex-1 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-semibold hover:bg-slate-200 transition-colors">
+          Άκυρο
+        </button>
+      </div>
     </form>
   );
 }
