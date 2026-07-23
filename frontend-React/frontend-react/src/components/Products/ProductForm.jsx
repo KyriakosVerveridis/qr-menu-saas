@@ -6,6 +6,8 @@ const API_URL = import.meta.env.VITE_API_URL;
 export default function ProductForm({ restaurantId, onSave, initialData = null }) {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(initialData?.image || null);
 
   const getTranslation = (lang) => {
     if (!initialData?.translations) return { name: '', description: '' };
@@ -31,6 +33,13 @@ export default function ProductForm({ restaurantId, onSave, initialData = null }
     .catch(err => console.error("Error fetching categories:", err));
   }, [restaurantId]);
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -42,20 +51,26 @@ export default function ProductForm({ restaurantId, onSave, initialData = null }
       translations.push({ language_code: 'en', name: formData.name_en, description: formData.description_en });
     }
 
-    const payload = {
-      category: parseInt(formData.category),
-      price: formData.price,
-      restaurant: restaurantId,
-      translations,
-    };
+    const form = new FormData();
+    form.append('category', parseInt(formData.category));
+    form.append('price', formData.price);
+    form.append('restaurant', restaurantId);
+    form.append('translations', JSON.stringify(translations));
+    if (imageFile) {
+      form.append('image_file', imageFile);
+    }
 
-    const config = { headers: { Authorization: `Bearer ${localStorage.getItem('access')}` } };
+    const config = {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('access')}`,
+      },
+    };
 
     try {
       if (initialData) {
-        await axios.put(`${API_URL}/api/menu/items/${initialData.id}/?restaurant=${restaurantId}`, payload, config);
+        await axios.put(`${API_URL}/api/menu/items/${initialData.id}/?restaurant=${restaurantId}`, form, config);
       } else {
-        await axios.post(`${API_URL}/api/menu/items/?restaurant=${restaurantId}`, payload, config);
+        await axios.post(`${API_URL}/api/menu/items/?restaurant=${restaurantId}`, form, config);
       }
       onSave();
     } catch (err) {
@@ -68,6 +83,23 @@ export default function ProductForm({ restaurantId, onSave, initialData = null }
 
   return (
     <form onSubmit={handleSubmit} className="bg-white p-6 border border-slate-200 rounded-2xl space-y-4">
+      <div>
+        <label className="text-sm font-medium text-slate-600 mb-2 block">Φωτογραφία</label>
+        {imagePreview && (
+          <img src={imagePreview} alt="Preview" className="w-24 h-24 object-cover rounded-xl mb-2 border border-slate-200" />
+        )}
+        <label className="inline-block bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-medium text-sm cursor-pointer hover:bg-slate-200 transition-colors">
+          {imagePreview ? '📷 Αλλαγή φωτογραφίας' : '📷 Προσθήκη φωτογραφίας'}
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleImageChange}
+            className="hidden"
+          />
+        </label>
+      </div>
+
       <div>
         <label className="text-sm font-medium text-slate-600 mb-1 block">Όνομα (Ελληνικά)</label>
         <input

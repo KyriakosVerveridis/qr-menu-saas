@@ -52,7 +52,7 @@ def create_menu_item(request, pk=None):
     # 1. GET: Φέρνει τα προϊόντα ΜΟΝΟ για το επιλεγμένο κατάστημα
     if request.method == 'GET':
         items = MenuItem.objects.filter(restaurant=user_restaurant)
-        serializer = PublicMenuItemSerializer(items, many=True)
+        serializer = MenuItemCreateSerializer(items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     # 2. POST: Δημιουργία προϊόντος στο σωστό κατάστημα
