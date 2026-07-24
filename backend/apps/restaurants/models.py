@@ -1,4 +1,5 @@
 from django.db import models
+from apps.business_types.models import BusinessType
 from django.contrib.auth import get_user_model
 from django.utils.text import slugify
 from unidecode import unidecode
@@ -6,6 +7,13 @@ from unidecode import unidecode
 User = get_user_model()
 
 class Restaurant(models.Model):
+    business_type = models.ForeignKey(
+        BusinessType,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='restaurants'
+    )
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="restaurants")
