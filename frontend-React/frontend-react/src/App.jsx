@@ -6,6 +6,7 @@ import MenuPage from './components/MenuPage';
 import ProductList from './components/Products/ProductList';
 import Register from './components/Register/Register';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
+import Onboarding from './components/Onboarding/Onboarding';
 
 function App() {
   return (
@@ -14,6 +15,11 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/menu/:slug" element={<MenuPage />} />
+      <Route path="/onboarding" element={
+        <ProtectedRoute>
+          <Onboarding />
+        </ProtectedRoute>
+      } />
       <Route path="/dashboard" element={
         <ProtectedRoute>
           <Dashboard />

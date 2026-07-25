@@ -20,7 +20,16 @@ export default function Login() {
       });
       localStorage.setItem('access', res.data.access);
       localStorage.setItem('refresh', res.data.refresh);
-      navigate('/dashboard');
+
+      const storesRes = await axios.get(`${API_URL}/api/restaurants/`, {
+        headers: { Authorization: `Bearer ${res.data.access}` }
+      });
+
+      if (storesRes.data.length === 0) {
+        navigate('/onboarding');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       alert("Λάθος στοιχεία εισόδου!");
     } finally {
