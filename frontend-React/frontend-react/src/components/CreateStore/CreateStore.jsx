@@ -1,23 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function CreateStore({ isOpen, onClose, onStoreCreated }) {
-  const [formData, setFormData] = useState({ name: '', address: '', phone_number: '', email: '' });
+  const [formData, setFormData] = useState({ name: '', address: '', phone_number: '', email: '', business_type: '' });
   const [loading, setLoading] = useState(false);
+  const [businessTypes, setBusinessTypes] = useState([]);
+
+  useEffect(() => {
+    axios.get(`${API_URL}/api/business-types/list/`)
+      .then(res => setBusinessTypes(res.data))
+      .catch(err => console.error("Error fetching business types:", err));
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       const token = localStorage.getItem('access');
-      await axios.post(`${API_URL}/api/restaurants/`, formData, {
+      const payload = {
+        ...formData,
+        business_type: formData.business_type || null,
+      };
+      await axios.post(`${API_URL}/api/restaurants/`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       onStoreCreated();
       onClose();
-      setFormData({ name: '', address: '', phone_number: '', email: '' });
+      setFormData({ name: '', address: '', phone_number: '', email: '', business_type: '' });
     } catch (err) {
       const message = err.response?.data?.name?.[0] || "Αποτυχία δημιουργίας καταστήματος";
       alert(message);
@@ -39,6 +50,18 @@ export default function CreateStore({ isOpen, onClose, onStoreCreated }) {
           className="w-full border p-2 mb-3 rounded"
           onChange={(e) => setFormData({...formData, name: e.target.value})}
         />
+
+        <select
+          value={formData.business_type}
+          className="w-full border p-2 mb-3 rounded"
+          onChange={(e) => setFormData({...formData, business_type: e.target.value})}
+        >
+          <option value="">-- Τύπος καταστήματος (προαιρετικό) --</option>
+          {businessTypes.map(bt => (
+            <option key={bt.id} value={bt.id}>{bt.name}</option>
+          ))}
+        </select>
+
         <input
           placeholder="Διεύθυνση"
           value={formData.address}
