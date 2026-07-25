@@ -20,9 +20,25 @@ export default function CategoryList() {
   };
 
   const fetchMasterCategories = () => {
-    axios.get(`${API_URL}/api/categories/master-list/`)
-      .then(res => setMasterCategories(res.data))
-      .catch(err => console.error("Error fetching master categories:", err));
+    if (!restaurantId) return;
+
+    axios.get(`${API_URL}/api/restaurants/${restaurantId}/`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('access')}` }
+    })
+    .then(res => {
+      const businessTypeId = res.data.business_type;
+      if (businessTypeId) {
+        return axios.get(`${API_URL}/api/business-types/${businessTypeId}/categories/`);
+      }
+      return axios.get(`${API_URL}/api/categories/master-list/`);
+    })
+    .then(res => {
+      const list = res.data.map(item =>
+        item.master_category ? item.master_category : item
+      );
+      setMasterCategories(list);
+    })
+    .catch(err => console.error("Error fetching master categories:", err));
   };
 
   useEffect(() => {
@@ -31,7 +47,7 @@ export default function CategoryList() {
 
   useEffect(() => {
     fetchMasterCategories();
-  }, []);
+  }, [restaurantId]);
 
   const handleAddCategory = () => {
     if (!selectedMasterCategory) return;
