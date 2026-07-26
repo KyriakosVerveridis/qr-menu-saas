@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 import axios from 'axios';
 import { useRestaurant } from '../../context/RestaurantContext';
 import CreateStore from '../CreateStore/CreateStore';
+import StoreSelectorModal from '../Stores/StoreSelectorModal';
+import QrCodeModal from '../QrCode/QrCodeModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -10,6 +12,8 @@ export default function Sidebar({ isOpen, onClose }) {
   const [stores, setStores] = useState([]);
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const { restaurantId, updateRestaurant } = useRestaurant();
   const navigate = useNavigate();
@@ -56,13 +60,9 @@ export default function Sidebar({ isOpen, onClose }) {
     };
   }, [restaurantId]);
 
-  const handleSelect = (e) => {
-    const id = e.target.value;
-    if (!id) return;
-    updateRestaurant(id);
-    navigate('/dashboard/products');
-    onClose?.();
-  };
+  const selectedStoreName = stores.find(s => String(s.id) === String(restaurantId))?.name;
+
+  const navBtnClass = "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors";
 
   return (
     <>
@@ -74,51 +74,68 @@ export default function Sidebar({ isOpen, onClose }) {
       )}
 
       <div
-        className={`fixed md:static top-0 left-0 h-screen w-64 bg-slate-900 text-white p-4 flex flex-col z-50 transition-transform duration-200 ${
+        className={`fixed md:static top-0 left-0 h-screen w-64 bg-white border-r border-slate-200 p-4 flex flex-col z-50 transition-transform duration-200 ${
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold">Dashboard</h2>
-          <button onClick={onClose} className="md:hidden text-slate-400 hover:text-white text-2xl leading-none">
+          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <span className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white text-sm">M</span>
+            MenuApp
+          </h2>
+          <button onClick={onClose} className="md:hidden text-slate-400 hover:text-slate-700 text-2xl leading-none">
             ×
           </button>
         </div>
 
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <label className="text-xs font-semibold text-slate-400">ΚΑΤΑΣΤΗΜΑ</label>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="text-white hover:text-green-400 font-bold"
-            >
-              +
-            </button>
-          </div>
-          <select
-            value={restaurantId || ''}
-            onChange={handleSelect}
-            className="w-full bg-slate-800 text-white px-3 py-2 rounded-lg border border-slate-700"
+        <div className="mb-2">
+          <button
+            onClick={() => setIsStoreModalOpen(true)}
+            className={`${navBtnClass} text-left`}
           >
-            <option value="">-- Επιλέξτε --</option>
-            {stores.map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
-          {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
+            <span>🏪</span>
+            <span>{selectedStoreName || 'Επιλέξτε κατάστημα'}</span>
+          </button>
+          {error && <p className="text-red-500 text-xs mt-2 px-3">{error}</p>}
         </div>
 
-        {qrCodeUrl && (
-          <div className="mb-6 bg-white p-3 rounded-xl flex flex-col items-center">
-            <img src={qrCodeUrl} alt="QR Code καταστήματος" className="w-32 h-32" />
-            <span className="text-slate-600 text-xs mt-2 font-medium">QR Menu</span>
-          </div>
-        )}
+        <nav className="flex-1 space-y-1">
+          <button onClick={() => setIsModalOpen(true)} className={navBtnClass}>
+            <span>➕</span>
+            <span>Νέο κατάστημα</span>
+          </button>
+          <NavLink to="/dashboard/products" className={navBtnClass} onClick={onClose}>
+            <span>🍽️</span>
+            <span>Διαχείριση Μενού</span>
+          </NavLink>
+          <button onClick={() => setIsQrModalOpen(true)} className={navBtnClass}>
+            <span>📱</span>
+            <span>QR Κωδικοί</span>
+          </button>
+        </nav>
 
         <CreateStore
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onStoreCreated={fetchStores}
+        />
+
+        <StoreSelectorModal
+          isOpen={isStoreModalOpen}
+          onClose={() => setIsStoreModalOpen(false)}
+          stores={stores}
+          selectedId={restaurantId}
+          onSelect={(id) => {
+            updateRestaurant(id);
+            navigate('/dashboard/products');
+            onClose?.();
+          }}
+        />
+
+        <QrCodeModal
+          isOpen={isQrModalOpen}
+          onClose={() => setIsQrModalOpen(false)}
+          qrCodeUrl={qrCodeUrl}
         />
       </div>
     </>
