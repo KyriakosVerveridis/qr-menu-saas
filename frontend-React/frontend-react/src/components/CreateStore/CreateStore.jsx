@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -19,10 +20,7 @@ export default function CreateStore({ isOpen, onClose, onStoreCreated }) {
     setLoading(true);
     try {
       const token = localStorage.getItem('access');
-      const payload = {
-        ...formData,
-        business_type: formData.business_type || null,
-      };
+      const payload = { ...formData, business_type: formData.business_type || null };
       await axios.post(`${API_URL}/api/restaurants/`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -39,55 +37,83 @@ export default function CreateStore({ isOpen, onClose, onStoreCreated }) {
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg w-full max-w-sm text-black shadow-xl">
-        <h3 className="font-bold mb-4 text-lg">Νέο Κατάστημα</h3>
+  return createPortal(
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="w-full max-w-md my-8">
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 space-y-4 shadow-xl">
+          <div className="text-center mb-2">
+            <div className="w-14 h-14 bg-emerald-600 rounded-2xl mx-auto mb-3 flex items-center justify-center text-white text-xl">
+              🏪
+            </div>
+            <h2 className="text-xl font-bold text-slate-900">Νέο Κατάστημα</h2>
+          </div>
 
-        <input
-          placeholder="Όνομα Καταστήματος" required
-          value={formData.name}
-          className="w-full border p-2 mb-3 rounded"
-          onChange={(e) => setFormData({...formData, name: e.target.value})}
-        />
+          <div>
+            <label className="text-sm font-medium text-slate-600 mb-1 block">Όνομα Καταστήματος</label>
+            <input
+              placeholder="π.χ., Η Πράσινη Κουζίνα"
+              required
+              value={formData.name}
+              className="w-full p-2 border border-slate-200 rounded-xl"
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+            />
+          </div>
 
-        <select
-          value={formData.business_type}
-          className="w-full border p-2 mb-3 rounded"
-          onChange={(e) => setFormData({...formData, business_type: e.target.value})}
-        >
-          <option value="">-- Τύπος καταστήματος (προαιρετικό) --</option>
-          {businessTypes.map(bt => (
-            <option key={bt.id} value={bt.id}>{bt.name}</option>
-          ))}
-        </select>
+          <div>
+            <label className="text-sm font-medium text-slate-600 mb-1 block">Τύπος Καταστήματος</label>
+            <select
+              value={formData.business_type}
+              className="w-full p-2 border border-slate-200 rounded-xl"
+              onChange={(e) => setFormData({...formData, business_type: e.target.value})}
+            >
+              <option value="">-- Επιλέξτε (προαιρετικό) --</option>
+              {businessTypes.map(bt => (
+                <option key={bt.id} value={bt.id}>{bt.name}</option>
+              ))}
+            </select>
+          </div>
 
-        <input
-          placeholder="Διεύθυνση"
-          value={formData.address}
-          className="w-full border p-2 mb-3 rounded"
-          onChange={(e) => setFormData({...formData, address: e.target.value})}
-        />
-        <input
-          placeholder="Τηλέφωνο"
-          value={formData.phone_number}
-          className="w-full border p-2 mb-3 rounded"
-          onChange={(e) => setFormData({...formData, phone_number: e.target.value})}
-        />
-        <input
-          placeholder="Email" type="email"
-          value={formData.email}
-          className="w-full border p-2 mb-4 rounded"
-          onChange={(e) => setFormData({...formData, email: e.target.value})}
-        />
+          <div>
+            <label className="text-sm font-medium text-slate-600 mb-1 block">Διεύθυνση</label>
+            <input
+              placeholder="Διεύθυνση"
+              value={formData.address}
+              className="w-full p-2 border border-slate-200 rounded-xl"
+              onChange={(e) => setFormData({...formData, address: e.target.value})}
+            />
+          </div>
 
-        <div className="flex gap-2">
-          <button type="submit" disabled={loading} className="flex-1 bg-blue-600 text-white py-2 rounded font-semibold disabled:opacity-50">
-            {loading ? 'Αποθήκευση...' : 'Αποθήκευση'}
-          </button>
-          <button type="button" onClick={onClose} className="flex-1 bg-gray-200 py-2 rounded">Άκυρο</button>
-        </div>
-      </form>
-    </div>
+          <div>
+            <label className="text-sm font-medium text-slate-600 mb-1 block">Τηλέφωνο</label>
+            <input
+              placeholder="Τηλέφωνο"
+              value={formData.phone_number}
+              className="w-full p-2 border border-slate-200 rounded-xl"
+              onChange={(e) => setFormData({...formData, phone_number: e.target.value})}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-slate-600 mb-1 block">Email</label>
+            <input
+              placeholder="Email" type="email"
+              value={formData.email}
+              className="w-full p-2 border border-slate-200 rounded-xl"
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+            />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button type="submit" disabled={loading} className="flex-1 bg-emerald-600 text-white py-2 rounded-xl font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50">
+              {loading ? 'Αποθήκευση...' : 'Δημιουργία'}
+            </button>
+            <button type="button" onClick={onClose} className="flex-1 bg-slate-100 text-slate-700 py-2 rounded-xl font-semibold hover:bg-slate-200 transition-colors">
+              Άκυρο
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>,
+    document.body
   );
 }

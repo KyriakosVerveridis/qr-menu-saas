@@ -12,6 +12,16 @@ export default function ProductList() {
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [restaurantName, setRestaurantName] = useState('');
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    axios.get(`${API_URL}/api/restaurants/${restaurantId}/`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('access')}` }
+    })
+    .then(res => setRestaurantName(res.data.name))
+    .catch(err => console.error("Error fetching restaurant:", err));
+  }, [restaurantId]);
 
   const fetchProducts = () => {
     if (!restaurantId) return;
@@ -57,6 +67,12 @@ export default function ProductList() {
 
   return (
     <div className="p-4">
+      <div className="mb-4 text-center">
+        <h1 className="text-lg font-bold text-slate-900">
+          Δημιουργία Μενού{restaurantName && ` - ${restaurantName}`}
+        </h1>
+      </div>
+
       <div className="flex gap-1 mb-6 bg-slate-100 p-1 rounded-xl w-fit">
         <button
           onClick={() => setActiveTab('categories')}
