@@ -1,6 +1,6 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import UserProfileView, RegisterView
+from .views import PasswordResetRequestView, UserProfileView, RegisterView, PasswordResetConfirmView
 
 urlpatterns = [
     # Endpoints for Login and Token Refresh (from Simple JWT)
@@ -9,6 +9,10 @@ urlpatterns = [
     
     # Endpoint for Register
     path('register/', RegisterView.as_view(), name='register'),
+
+    # Endpoint for Reset Password Request-Confirmation
+    path('password-reset/', PasswordResetRequestView.as_view(), name='password_reset'),
+    path('password-reset-confirm/<str:uidb64>/<str:token>/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
 
     # Endpoint for Profile
     path('profile/', UserProfileView.as_view(), name='user_profile'),
