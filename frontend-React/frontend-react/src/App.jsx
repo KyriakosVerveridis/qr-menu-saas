@@ -7,6 +7,8 @@ import ProductList from './components/Products/ProductList';
 import Register from './components/Register/Register';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import Onboarding from './components/Onboarding/Onboarding';
+import ForgotPassword from './components/PasswordReset/ForgotPassword';
+import ResetPassword from './components/PasswordReset/ResetPassword';
 
 function App() {
   return (
@@ -14,6 +16,8 @@ function App() {
       <Route path="/" element={<h2>Αρχική Σελίδα</h2>} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:uidb64/:token" element={<ResetPassword />} />
       <Route path="/menu/:slug" element={<MenuPage />} />
       <Route path="/onboarding" element={
         <ProtectedRoute>

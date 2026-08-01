@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -63,6 +63,12 @@ export default function Login() {
         <button type="submit" disabled={loading} style={{ width:'100%', padding:'12px', background:'#0284c7', color:'white', border:'none', borderRadius:'6px', fontWeight:'600', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
           {loading ? 'Σύνδεση...' : 'Sign In'}
         </button>
+
+        <p style={{ textAlign: 'center', marginTop: '15px' }}>
+          <Link to="/forgot-password" style={{ color: '#0284c7', fontSize: '14px' }}>
+            Ξεχάσατε τον κωδικό;
+          </Link>
+        </p>
       </form>
     </div>
   );
