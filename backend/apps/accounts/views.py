@@ -10,7 +10,8 @@ from django.contrib.auth import get_user_model
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.conf import settings
-from django.core.mail import send_mail
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 User = get_user_model()
 
@@ -53,13 +54,15 @@ class PasswordResetRequestView(APIView):
             token = token_generator.make_token(user)
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             reset_link = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
-            send_mail(
-                subject="Επαναφορά Κωδικού - QR Menu",
-                message=f"Πατήστε τον παρακάτω σύνδεσμο για να επαναφέρετε τον κωδικό σας:\n\n{reset_link}",
+
+            message = Mail(
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[user.email],
-                fail_silently=False,
+                to_emails=user.email,
+                subject="Επαναφορά Κωδικού - QR Menu",
+                plain_text_content=f"Πατήστε τον παρακάτω σύνδεσμο για να επαναφέρετε τον κωδικό σας:\n\n{reset_link}",
             )
+            sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
+            sg.send(message)
 
         return Response(
             {"message": "Αν το email υπάρχει στο σύστημά μας, θα λάβετε σύνδεσμο επαναφοράς."},
