@@ -12,6 +12,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.conf import settings
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+from .tokens import email_verification_token
 
 User = get_user_model()
 
@@ -36,9 +37,23 @@ class RegisterView(APIView):
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            user = serializer.save()
+
+            token = email_verification_token.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            verify_link = f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}/"
+
+            message = Mail(
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to_emails=user.email,
+                subject="Επιβεβαίωση Email - QR Menu",
+                plain_text_content=f"Καλωσήρθες! Πατήστε τον παρακάτω σύνδεσμο για να επιβεβαιώσετε το email σας:\n\n{verify_link}",
+            )
+            sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
+            sg.send(message)
+
             return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)       
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class PasswordResetRequestView(APIView):
     permission_classes = [AllowAny]
@@ -89,3 +104,23 @@ class PasswordResetConfirmView(APIView):
             return Response({"message": "Password has been reset successfully."}, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid token or user ID."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class VerifyEmailView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, uidb64, token):
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+
+        if user is not None and email_verification_token.check_token(user, token):
+            user.profile.is_email_verified = True
+            user.profile.save()
+            return Response({"message": "Το email επιβεβαιώθηκε επιτυχώς."}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Ο σύνδεσμος δεν είναι έγκυρος ή έχει λήξει."}, status=status.HTTP_400_BAD_REQUEST)
+
+        
