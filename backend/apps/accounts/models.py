@@ -8,6 +8,7 @@ User = get_user_model()
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     created_at = models.DateTimeField(auto_now_add=True)
+    is_email_verified = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.username
