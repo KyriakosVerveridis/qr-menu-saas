@@ -38,12 +38,10 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            print(f"DEBUG - User created: {user.email}")
 
             token = email_verification_token.make_token(user)
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             verify_link = f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}/"
-            print(f"DEBUG - About to send email to: {user.email}")
 
             message = Mail(
                 from_email=settings.DEFAULT_FROM_EMAIL,
@@ -52,9 +50,8 @@ class RegisterView(APIView):
                 plain_text_content=f"Καλωσήρθες! Πατήστε τον παρακάτω σύνδεσμο για να επιβεβαιώσετε το email σας:\n\n{verify_link}",
             )
             sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
-            response = sg.send(message)
-            print(f"DEBUG - SendGrid response status: {response.status_code}")
-
+            sg.send(message)
+            
             return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
