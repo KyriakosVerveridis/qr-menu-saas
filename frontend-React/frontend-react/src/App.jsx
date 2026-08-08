@@ -9,6 +9,7 @@ import ProtectedRoute from './components/Auth/ProtectedRoute';
 import Onboarding from './components/Onboarding/Onboarding';
 import ForgotPassword from './components/PasswordReset/ForgotPassword';
 import ResetPassword from './components/PasswordReset/ResetPassword';
+import VerifyEmail from './components/EmailVerification/VerifyEmail';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:uidb64/:token" element={<ResetPassword />} />
+      <Route path="/verify-email/:uidb64/:token" element={<VerifyEmail />} />
       <Route path="/menu/:slug" element={<MenuPage />} />
       <Route path="/onboarding" element={
         <ProtectedRoute>
