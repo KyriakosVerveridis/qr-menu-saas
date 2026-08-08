@@ -105,7 +105,6 @@ class PasswordResetConfirmView(APIView):
         else:
             return Response({"error": "Invalid token or user ID."}, status=status.HTTP_400_BAD_REQUEST)
 
-
 class VerifyEmailView(APIView):
     permission_classes = [AllowAny]
 
@@ -123,4 +122,31 @@ class VerifyEmailView(APIView):
         else:
             return Response({"error": "Ο σύνδεσμος δεν είναι έγκυρος ή έχει λήξει."}, status=status.HTTP_400_BAD_REQUEST)
 
+class ResendVerificationEmailView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email=email).first()
+        if user and not user.profile.is_email_verified:
+            token = email_verification_token.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            verify_link = f"{settings.FRONTEND_URL}/verify-email/{uid}/{token}/"
+
+            message = Mail(
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to_emails=user.email,
+                subject="Επιβεβαίωση Email - QR Menu",
+                plain_text_content=f"Πατήστε τον παρακάτω σύνδεσμο για να επιβεβαιώσετε το email σας:\n\n{verify_link}",
+            )
+            sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
+            sg.send(message)
+
+        return Response(
+            {"message": "Αν το email υπάρχει και δεν έχει επιβεβαιωθεί, θα λάβετε νέο σύνδεσμο."},
+            status=status.HTTP_200_OK
+        )
         
