@@ -13,6 +13,7 @@ from django.conf import settings
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 from .tokens import email_verification_token
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 User = get_user_model()
 
@@ -149,4 +150,19 @@ class ResendVerificationEmailView(APIView):
             {"message": "Αν το email υπάρχει και δεν έχει επιβεβαιωθεί, θα λάβετε νέο σύνδεσμο."},
             status=status.HTTP_200_OK
         )
-        
+
+class VerifiedTokenObtainPairView(TokenObtainPairView):
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+
+        if response.status_code == 200:
+            username = request.data.get('username')
+            user = User.objects.filter(username=username).first()
+
+            if user and not user.profile.is_email_verified:
+                return Response(
+                    {"error": "Παρακαλώ επιβεβαιώστε το email σας πριν συνδεθείτε."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        return response        
