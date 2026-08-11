@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import ProductDetailSheet from './ProductDetailSheet/ProductDetailSheet';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -16,6 +17,8 @@ export default function MenuPage() {
   const [currentCat, setCurrentCat] = useState('all');
   const [isDark, setIsDark] = useState(localStorage.getItem('prefDark') === 'true');
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedCategoryName, setSelectedCategoryName] = useState(null);
 
   useEffect(() => {
     const cacheKey = `menu_cache_${slug}`;
@@ -40,7 +43,6 @@ export default function MenuPage() {
   }, [slug]);
 
   const applyData = (data) => {
-    // Δέχεται είτε bare array (τρέχον backend) είτε {restaurant, categories} (μελλοντικό)
     if (Array.isArray(data)) {
       setGroups(data);
       setRestaurantName(null);
@@ -82,6 +84,16 @@ export default function MenuPage() {
     setCurrentLang(lang);
     localStorage.setItem('prefLang', lang);
     setLangMenuOpen(false);
+  };
+
+  const openProduct = (item, categoryTranslations) => {
+    setSelectedProduct(item);
+    setSelectedCategoryName(getTranslation(categoryTranslations, currentLang).name);
+  };
+
+  const closeProduct = () => {
+    setSelectedProduct(null);
+    setSelectedCategoryName(null);
   };
 
   const visibleGroups = currentCat === 'all'
@@ -171,37 +183,59 @@ export default function MenuPage() {
         </nav>
       </header>
 
-      <main className="max-w-lg mx-auto p-4 space-y-4">
-        {visibleGroups.flatMap(g => g.items).map(item => {
-          const t = getTranslation(item.translations, currentLang);
-          return (
-            <div
-              key={item.id}
-              className={`rounded-2xl shadow-sm overflow-hidden flex border h-32 ${isDark ? 'bg-neutral-800 border-neutral-700' : 'bg-white border-gray-100'}`}
-            >
-              <div className="w-32 h-full bg-gray-200 flex-shrink-0">
-                <img
-                  src={item.image || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mN8/x8AAuMB8DtXNjkAAAAASUVORK5CYII='}
-                  alt={t.name}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <div className="flex-1 p-3 flex flex-col justify-between">
-                <div>
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-bold text-sm leading-tight">{t.name}</h3>
-                    <span className="font-black ml-2 text-sm whitespace-nowrap">{item.price}€</span>
-                  </div>
-                  <p className={`text-[11px] mt-1 line-clamp-2 italic leading-snug ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    {t.description}
-                  </p>
-                </div>
-              </div>
+      <main className="max-w-lg mx-auto p-4 space-y-6">
+        {visibleGroups.map(g => (
+          <div key={g.category.id}>
+            <h2 className={`text-l font-bold uppercase tracking-widest mb-6 px-0 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
+              {getTranslation(g.category.translations, currentLang).name}
+            </h2>
+            <div>
+              {g.items.map((item, idx) => {
+                const t = getTranslation(item.translations, currentLang);
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => openProduct(item, g.category.translations)}
+                    className={`w-full text-left flex items-start gap-4 pt-4 pb-6 ${
+                      idx !== 0 ? (isDark ? 'border-t border-neutral-600' : 'border-t border-gray-300') : ''
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-lg leading-tight">{t.name}</h3>
+                      {t.description && (
+                        <p className={`text-sm mt-1.5 leading-relaxed line-clamp-2 min-h-[2.5rem] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                          {t.description}
+                        </p>
+                      )}
+                      <span className={`block text-base  mt-7 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {item.price}€
+                      </span>
+                    </div>
+                    <div className="w-44 h-28 rounded-2xl overflow-hidden bg-gray-200 flex-shrink-0">
+                      <img
+                        src={item.image || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mN8/x8AAuMB8DtXNjkAAAAASUVORK5CYII='}
+                        alt={t.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </main>
+
+      {selectedProduct && (
+        <ProductDetailSheet
+          product={selectedProduct}
+          translation={getTranslation(selectedProduct.translations, currentLang)}
+          categoryName={selectedCategoryName}
+          isDark={isDark}
+          onClose={closeProduct}
+        />
+      )}
     </div>
   );
 }
