@@ -8,6 +8,7 @@ class Subscription(models.Model):
     status = models.CharField(max_length=20, choices=[('active', 'Active'), ('inactive', 'Inactive'), ('trialing', 'Trialing')], default='trialing')
     stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
     stripe_subscription_id = models.CharField(max_length=255, blank=True, null=True)
+    current_period_end = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
