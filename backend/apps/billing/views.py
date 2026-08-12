@@ -58,7 +58,7 @@ class StripeWebhookView(APIView):
 
             Subscription.objects.create(
                 restaurant_id=restaurant_id,
-                plan_type=session.metadata.get('plan_type', 'yearly'),
+                plan_type=getattr(session.metadata, 'plan_type', 'yearly'),
                 status='active',
                 stripe_customer_id=session.customer,
                 stripe_subscription_id=session.subscription,
