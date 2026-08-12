@@ -5,6 +5,7 @@ import { useRestaurant } from '../../context/RestaurantContext';
 import CreateStore from '../CreateStore/CreateStore';
 import StoreSelectorModal from '../Stores/StoreSelectorModal';
 import QrCodeModal from '../QrCode/QrCodeModal';
+import UpgradeModal from '../Billing/UpgradeModal';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -14,6 +15,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const { restaurantId, updateRestaurant } = useRestaurant();
   const navigate = useNavigate();
@@ -112,6 +114,10 @@ export default function Sidebar({ isOpen, onClose }) {
             <span>📱</span>
             <span>QR Κωδικοί</span>
           </button>
+          <button onClick={() => setIsUpgradeModalOpen(true)} className={navBtnClass}>
+            <span>⭐</span>
+            <span>Αναβάθμιση</span>
+          </button>
         </nav>
 
         <CreateStore
@@ -136,6 +142,12 @@ export default function Sidebar({ isOpen, onClose }) {
           isOpen={isQrModalOpen}
           onClose={() => setIsQrModalOpen(false)}
           qrCodeUrl={qrCodeUrl}
+        />
+
+        <UpgradeModal
+          isOpen={isUpgradeModalOpen}
+          onClose={() => setIsUpgradeModalOpen(false)}
+          restaurantId={restaurantId}
         />
       </div>
     </>

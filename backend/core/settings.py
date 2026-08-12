@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "corsheaders",
     'apps.languages',
     'apps.business_types',
+    'apps.billing',
 ]
 
 # CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
@@ -187,3 +188,7 @@ cloudinary.config(
 
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
 SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
+
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
+STRIPE_PRICE_YEARLY = os.environ.get('STRIPE_PRICE_YEARLY')
+STRIPE_PRICE_MONTHLY = os.environ.get('STRIPE_PRICE_MONTHLY')
