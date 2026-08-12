@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.conf import settings
 from apps.restaurants.models import Restaurant
+from datetime import datetime, timezone
 
 
 class CreateCheckoutSessionView(APIView):
@@ -42,6 +43,7 @@ class StripeWebhookView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        stripe.api_key = settings.STRIPE_SECRET_KEY
         payload = request.body
         sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
 
@@ -56,12 +58,19 @@ class StripeWebhookView(APIView):
             session = event.data.object
             restaurant_id = session.client_reference_id
 
-            Subscription.objects.create(
-                restaurant_id=restaurant_id,
-                plan_type=getattr(session.metadata, 'plan_type', 'yearly'),
-                status='active',
-                stripe_customer_id=session.customer,
+            stripe_subscription = stripe.Subscription.retrieve(session.subscription)
+            period_end_timestamp = stripe_subscription['items']['data'][0]['current_period_end']
+            period_end = datetime.fromtimestamp(period_end_timestamp, tz=timezone.utc)
+
+            Subscription.objects.update_or_create(
                 stripe_subscription_id=session.subscription,
+                defaults={
+                    'restaurant_id': restaurant_id,
+                    'plan_type': getattr(session.metadata, 'plan_type', 'yearly'),
+                    'status': 'active',
+                    'stripe_customer_id': session.customer,
+                    'current_period_end': period_end,
+                },
             )
 
         return Response(status=status.HTTP_200_OK)
