@@ -52,16 +52,16 @@ class StripeWebhookView(APIView):
         except (ValueError, stripe.error.SignatureVerificationError):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        if event['type'] == 'checkout.session.completed':
-            session = event['data']['object']
-            restaurant_id = session.get('client_reference_id')
+        if event.type == 'checkout.session.completed':
+            session = event.data.object
+            restaurant_id = session.client_reference_id
 
             Subscription.objects.create(
                 restaurant_id=restaurant_id,
-                plan_type=session.get('metadata', {}).get('plan_type', 'yearly'),
+                plan_type=session.metadata.get('plan_type', 'yearly'),
                 status='active',
-                stripe_customer_id=session.get('customer'),
-                stripe_subscription_id=session.get('subscription'),
+                stripe_customer_id=session.customer,
+                stripe_subscription_id=session.subscription,
             )
 
         return Response(status=status.HTTP_200_OK)
