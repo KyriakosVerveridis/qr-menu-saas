@@ -1,8 +1,9 @@
 import stripe
+from .models import Subscription
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.conf import settings
 from apps.restaurants.models import Restaurant
 
@@ -32,6 +33,35 @@ class CreateCheckoutSessionView(APIView):
             success_url=f"{settings.FRONTEND_URL}/dashboard?payment=success",
             cancel_url=f"{settings.FRONTEND_URL}/dashboard?payment=cancelled",
             client_reference_id=str(restaurant.id),
+            metadata={'plan_type': plan_type},
         )
 
         return Response({"checkout_url": session.url}, status=status.HTTP_200_OK)
+
+class StripeWebhookView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        payload = request.body
+        sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
+
+        try:
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+            )
+        except (ValueError, stripe.error.SignatureVerificationError):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            restaurant_id = session.get('client_reference_id')
+
+            Subscription.objects.create(
+                restaurant_id=restaurant_id,
+                plan_type=session.get('metadata', {}).get('plan_type', 'yearly'),
+                status='active',
+                stripe_customer_id=session.get('customer'),
+                stripe_subscription_id=session.get('subscription'),
+            )
+
+        return Response(status=status.HTTP_200_OK)
