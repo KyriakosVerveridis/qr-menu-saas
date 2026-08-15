@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.conf import settings
 from apps.restaurants.models import Restaurant
 from datetime import datetime, timezone
+from .serializers import SubscriptionSerializer
 
 
 class CreateCheckoutSessionView(APIView):
@@ -38,6 +39,52 @@ class CreateCheckoutSessionView(APIView):
         )
 
         return Response({"checkout_url": session.url}, status=status.HTTP_200_OK)
+
+class CreateBillingPortalSessionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        restaurant_id = request.data.get('restaurant_id')
+
+        if not restaurant_id:
+            return Response({"error": "restaurant_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        restaurant = Restaurant.objects.filter(id=restaurant_id, owner=request.user).first()
+        if not restaurant:
+            return Response({"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        subscription = Subscription.objects.filter(restaurant=restaurant, status='active').first()
+        if not subscription:
+            return Response({"error": "No active subscription found"}, status=status.HTTP_404_NOT_FOUND)
+
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+
+        portal_session = stripe.billing_portal.Session.create(
+            customer=subscription.stripe_customer_id,
+            return_url=f"{settings.FRONTEND_URL}/dashboard",
+        )
+
+        return Response({"portal_url": portal_session.url}, status=status.HTTP_200_OK)
+  
+class SubscriptionStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        restaurant_id = request.query_params.get('restaurant_id')
+
+        if not restaurant_id:
+            return Response({"error": "restaurant_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        restaurant = Restaurant.objects.filter(id=restaurant_id, owner=request.user).first()
+        if not restaurant:
+            return Response({"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        subscription = Subscription.objects.filter(restaurant=restaurant, status='active').first()
+        if not subscription:
+            return Response({"has_subscription": False}, status=status.HTTP_200_OK)
+
+        serializer = SubscriptionSerializer(subscription)
+        return Response({"has_subscription": True, "subscription": serializer.data}, status=status.HTTP_200_OK)
 
 class StripeWebhookView(APIView):
     permission_classes = [AllowAny]
