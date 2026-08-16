@@ -120,4 +120,13 @@ class StripeWebhookView(APIView):
                 },
             )
 
+        elif event.type == 'customer.subscription.deleted':
+            stripe_subscription = event.data.object
+            Subscription.objects.filter(stripe_subscription_id=stripe_subscription.id).update(status='inactive')
+
+        elif event.type == 'customer.subscription.updated':
+            stripe_subscription = event.data.object
+            new_status = 'active' if stripe_subscription.status == 'active' else 'inactive'
+            Subscription.objects.filter(stripe_subscription_id=stripe_subscription.id).update(status=new_status)
+
         return Response(status=status.HTTP_200_OK)
