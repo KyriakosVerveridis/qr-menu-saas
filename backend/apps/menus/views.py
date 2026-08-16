@@ -14,8 +14,18 @@ from apps.categories.models import Category
 @api_view(['GET'])
 def public_menu(request, slug):
     from apps.categories.serializers import MasterCategorySerializer
+    from apps.billing.models import Subscription
 
     restaurant = get_object_or_404(Restaurant, slug=slug)
+
+    first_restaurant = Restaurant.objects.filter(owner=restaurant.owner).order_by('created_at').first()
+    is_first_restaurant = (restaurant.id == first_restaurant.id)
+
+    if not is_first_restaurant:
+        has_active_subscription = Subscription.objects.filter(restaurant=restaurant, status='active').exists()
+        if not has_active_subscription:
+            return Response({"error": "This menu is not yet active."}, status=status.HTTP_402_PAYMENT_REQUIRED)
+
     items = (
         MenuItem.objects.filter(restaurant=restaurant)
         .select_related('category__master_category')
@@ -33,7 +43,6 @@ def public_menu(request, slug):
         groups[master_category.id]['items'].append(PublicMenuItemSerializer(item).data)
 
     return Response(list(groups.values()))
-
 
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
