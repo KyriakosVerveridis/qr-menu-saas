@@ -13,6 +13,7 @@ export default function MenuPage() {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
   const [currentLang, setCurrentLang] = useState(localStorage.getItem('prefLang') || 'el');
   const [currentCat, setCurrentCat] = useState('all');
   const [isDark, setIsDark] = useState(localStorage.getItem('prefDark') === 'true');
@@ -37,7 +38,11 @@ export default function MenuPage() {
       })
       .catch(err => {
         console.error("Σφάλμα φόρτωσης menu:", err);
-        setError(true);
+        if (err.response?.status === 402) {
+          setIsBlocked(true);
+        } else {
+          setError(true);
+        }
       })
       .finally(() => setLoading(false));
   }, [slug]);
@@ -58,6 +63,7 @@ export default function MenuPage() {
       g.category.translations.forEach(t => codes.add(t.language_code));
       g.items.forEach(item => item.translations.forEach(t => codes.add(t.language_code)));
     });
+    if (codes.size === 0) codes.add('el');
     return Array.from(codes);
   }, [groups]);
 
@@ -100,6 +106,21 @@ export default function MenuPage() {
     ? groups
     : groups.filter(g => g.category.id === currentCat);
 
+  if (isBlocked) {
+    return (
+      <div className={isDark ? 'dark min-h-screen bg-neutral-900 flex items-center justify-center p-6' : 'min-h-screen bg-gray-50 flex items-center justify-center p-6'}>
+        <div className="text-center max-w-sm">
+          <p className={`text-lg font-bold mb-2 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
+            Το μενού δεν είναι διαθέσιμο
+          </p>
+          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+            Παρακαλούμε επικοινωνήστε με το κατάστημα.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading && groups.length === 0) {
     return (
       <div className={isDark ? 'dark min-h-screen bg-neutral-900' : 'min-h-screen bg-gray-50'}>
@@ -116,6 +137,16 @@ export default function MenuPage() {
     return (
       <div className={isDark ? 'dark min-h-screen bg-neutral-900 flex items-center justify-center' : 'min-h-screen bg-gray-50 flex items-center justify-center'}>
         <p className="text-red-500 font-medium">Δεν ήταν δυνατή η φόρτωση του μενού.</p>
+      </div>
+    );
+  }
+
+  if (groups.length === 0) {
+    return (
+      <div className={isDark ? 'dark min-h-screen bg-neutral-900 flex items-center justify-center p-6' : 'min-h-screen bg-gray-50 flex items-center justify-center p-6'}>
+        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+          Το μενού δεν έχει ακόμα προϊόντα.
+        </p>
       </div>
     );
   }
