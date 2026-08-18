@@ -12,8 +12,9 @@ from apps.categories.models import Category
 import deepl
 from apps.languages.models import Language
 from apps.billing.models import Subscription
-from rest_framework.views import APIView
 from django.conf import settings
+from rest_framework import serializers
+from rest_framework.views import APIView
 
 
 @api_view(['GET'])
@@ -71,15 +72,18 @@ def create_menu_item(request, pk=None):
 
     # 2. POST: Δημιουργία προϊόντος στο σωστό κατάστημα
     if request.method == 'POST':
-        serializer = MenuItemCreateSerializer(data=request.data)
+        serializer = MenuItemCreateSerializer(data=request.data, context={'restaurant': user_restaurant})
         if serializer.is_valid():
             category = serializer.validated_data['category']
 
-            # Έλεγχος ασφαλείας:
             if category.restaurant != user_restaurant:
                 return Response({"error": "Invalid category for this restaurant"}, status=400)
 
-            serializer.save(restaurant=user_restaurant)
+            try:
+                serializer.save(restaurant=user_restaurant)
+            except serializers.ValidationError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -87,13 +91,15 @@ def create_menu_item(request, pk=None):
     # 3. PUT: Ενημέρωση προϊόντος
     if request.method == 'PUT':
         item = get_object_or_404(MenuItem, pk=pk, restaurant=user_restaurant)
-        serializer = MenuItemCreateSerializer(item, data=request.data, partial=True)
+        serializer = MenuItemCreateSerializer(item, data=request.data, partial=True, context={'restaurant': user_restaurant})
         if serializer.is_valid():
             category = serializer.validated_data.get('category')
             if category and category.restaurant != user_restaurant:
                 return Response({"error": "Invalid category for this restaurant"}, status=400)
-            serializer.save()
-
+            try:
+                serializer.save()
+            except serializers.ValidationError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -102,6 +108,7 @@ def create_menu_item(request, pk=None):
         item = get_object_or_404(MenuItem, pk=pk, restaurant=user_restaurant)
         item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class TranslateMenuView(APIView):
     permission_classes = [IsAuthenticated]
@@ -157,4 +164,4 @@ class TranslateMenuView(APIView):
             )
             translated_count += 1
 
-        return Response({"message": f"Μεταφράστηκαν {translated_count} προϊόντα."}, status=status.HTTP_200_OK)    
+        return Response({"message": f"Μεταφράστηκαν {translated_count} προϊόντα."}, status=status.HTTP_200_OK)
