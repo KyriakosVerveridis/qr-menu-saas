@@ -9,6 +9,9 @@ from .models import Restaurant
 from .serializers import RestaurantSerializer
 from .permissions import IsOwner
 from .services import get_user_restaurants
+from apps.billing.models import Subscription
+from rest_framework.response import Response
+from rest_framework import status
 
 
 class RestaurantViewSet(viewsets.ModelViewSet):
@@ -20,6 +23,18 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
+    def destroy(self, request, *args, **kwargs):
+        restaurant = self.get_object()
+    
+        has_active_subscription = Subscription.objects.filter(restaurant=restaurant, status='active').exists()
+        if has_active_subscription:
+            return Response(
+                {"error": "Δεν μπορείτε να διαγράψετε κατάστημα με ενεργή συνδρομή. Ακυρώστε πρώτα τη συνδρομή."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+        return super().destroy(request, *args, **kwargs)    
 
     @action(detail=True, methods=['get'], url_path='qr-code')
     def qr_code(self, request, pk=None):
@@ -41,3 +56,5 @@ class RestaurantViewSet(viewsets.ModelViewSet):
         buffer.seek(0)
 
         return HttpResponse(buffer, content_type='image/png')
+
+    
