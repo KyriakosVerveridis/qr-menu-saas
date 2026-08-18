@@ -68,10 +68,19 @@ class MenuItemCreateSerializer(serializers.ModelSerializer):
         return instance
 
     def _save_translations(self, menu_item, translations_data):
+        restaurant = self.context.get('restaurant')
+        has_premium = self._restaurant_has_premium(restaurant)
+
         for translation in translations_data:
             language_code = translation.get('language_code')
             if not language_code:
                 continue
+
+            if language_code not in ['el', 'en'] and not has_premium:
+                raise serializers.ValidationError(
+                    f"Η γλώσσα '{language_code}' απαιτεί ενεργή συνδρομή Premium."
+                )
+
             language = Language.objects.get(code=language_code)
             MenuItemTranslation.objects.update_or_create(
                 menu_item=menu_item,
@@ -81,6 +90,12 @@ class MenuItemCreateSerializer(serializers.ModelSerializer):
                     'description': translation.get('description', ''),
                 }
             )
+
+    def _restaurant_has_premium(self, restaurant):
+        from apps.billing.models import Subscription
+        if not restaurant:
+            return False
+        return Subscription.objects.filter(restaurant=restaurant, status='active').exists()
 
 
 class PublicMenuItemSerializer(serializers.ModelSerializer):
