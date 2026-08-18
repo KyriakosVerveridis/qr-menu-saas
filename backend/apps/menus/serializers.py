@@ -76,9 +76,9 @@ class MenuItemCreateSerializer(serializers.ModelSerializer):
             if not language_code:
                 continue
 
-            if language_code not in ['el', 'en'] and not has_premium:
+            if language_code != 'el' and not has_premium:
                 raise serializers.ValidationError(
-                    f"Η γλώσσα '{language_code}' απαιτεί ενεργή συνδρομή Premium."
+                    f"Η γλώσσα '{language_code}' απαιτεί ενεργή συνδρομή Premium. Χρησιμοποίησε το κουμπί μετάφρασης για Αγγλικά."
                 )
 
             language = Language.objects.get(code=language_code)

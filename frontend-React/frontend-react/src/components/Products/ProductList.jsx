@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useRestaurant } from '../../context/RestaurantContext';
 import ProductForm from './ProductForm';
 import CategoryList from '../Category/CategoryList';
+import TranslateMenuButton from '../Translate/TranslateMenuButton';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -104,6 +105,10 @@ export default function ProductList() {
             <button onClick={handleAdd} className="bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
               + Προσθήκη Προϊόντος
             </button>
+          </div>
+
+          <div className="mb-4">
+            <TranslateMenuButton restaurantId={restaurantId} />
           </div>
           {showForm && (
             <ProductForm

@@ -20,8 +20,6 @@ export default function ProductForm({ restaurantId, onSave, onCancel, initialDat
     price: initialData?.price || '',
     name_el: getTranslation('el').name,
     description_el: getTranslation('el').description,
-    name_en: getTranslation('en').name,
-    description_en: getTranslation('en').description,
   });
 
   useEffect(() => {
@@ -47,9 +45,6 @@ export default function ProductForm({ restaurantId, onSave, onCancel, initialDat
     const translations = [
       { language_code: 'el', name: formData.name_el, description: formData.description_el },
     ];
-    if (formData.name_en) {
-      translations.push({ language_code: 'en', name: formData.name_en, description: formData.description_en });
-    }
 
     const form = new FormData();
     form.append('category', parseInt(formData.category));
@@ -116,24 +111,6 @@ export default function ProductForm({ restaurantId, onSave, onCancel, initialDat
           className="w-full p-2 border border-slate-200 rounded-xl"
           value={formData.description_el}
           onChange={e => setFormData({...formData, description_el: e.target.value})}
-        />
-      </div>
-
-      <div>
-        <label className="text-sm font-medium text-slate-600 mb-1 block">Name (English) — προαιρετικό</label>
-        <input
-          className="w-full p-2 border border-slate-200 rounded-xl"
-          value={formData.name_en}
-          onChange={e => setFormData({...formData, name_en: e.target.value})}
-        />
-      </div>
-
-      <div>
-        <label className="text-sm font-medium text-slate-600 mb-1 block">Description (English)</label>
-        <textarea
-          className="w-full p-2 border border-slate-200 rounded-xl"
-          value={formData.description_en}
-          onChange={e => setFormData({...formData, description_en: e.target.value})}
         />
       </div>
 
