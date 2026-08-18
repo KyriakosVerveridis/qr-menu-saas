@@ -9,6 +9,7 @@ from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from apps.categories.models import Category
+from rest_framework import serializers
 
 
 @api_view(['GET'])
@@ -64,31 +65,37 @@ def create_menu_item(request, pk=None):
         serializer = MenuItemCreateSerializer(items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    # 2. POST: Δημιουργία προϊόντος στο σωστό κατάστημα
+        # 2. POST: Δημιουργία προϊόντος στο σωστό κατάστημα
     if request.method == 'POST':
-        serializer = MenuItemCreateSerializer(data=request.data)
+        serializer = MenuItemCreateSerializer(data=request.data, context={'restaurant': user_restaurant})
         if serializer.is_valid():
             category = serializer.validated_data['category']
 
-            # Έλεγχος ασφαλείας:
             if category.restaurant != user_restaurant:
                 return Response({"error": "Invalid category for this restaurant"}, status=400)
 
-            serializer.save(restaurant=user_restaurant)
+            try:
+                serializer.save(restaurant=user_restaurant)
+            except serializers.ValidationError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
     # 3. PUT: Ενημέρωση προϊόντος
     if request.method == 'PUT':
         item = get_object_or_404(MenuItem, pk=pk, restaurant=user_restaurant)
-        serializer = MenuItemCreateSerializer(item, data=request.data, partial=True)
+        serializer = MenuItemCreateSerializer(item, data=request.data, partial=True, context={'restaurant': user_restaurant})
         if serializer.is_valid():
             category = serializer.validated_data.get('category')
             if category and category.restaurant != user_restaurant:
                 return Response({"error": "Invalid category for this restaurant"}, status=400)
-            serializer.save()
-
+            try:
+                serializer.save()
+            except serializers.ValidationError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
