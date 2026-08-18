@@ -125,7 +125,7 @@ class TranslateMenuView(APIView):
             return Response({"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND)
 
         has_premium = Subscription.objects.filter(restaurant=restaurant, status='active').exists()
-        if target_language not in ['el', 'en'] and not has_premium:
+        if target_language != 'en' and not has_premium:
             return Response({"error": "Αυτή η γλώσσα απαιτεί ενεργή συνδρομή Premium."}, status=status.HTTP_400_BAD_REQUEST)
 
         language = Language.objects.filter(code=target_language).first()
@@ -163,5 +163,28 @@ class TranslateMenuView(APIView):
                 defaults={'name': translated_name, 'description': translated_description},
             )
             translated_count += 1
+
+        from apps.categories.models import MasterCategory, MasterCategoryTranslation
+
+        master_categories = MasterCategory.objects.filter(
+            id__in=Category.objects.filter(restaurant=restaurant).values_list('master_category_id', flat=True)
+        ).prefetch_related('translations')
+
+        for master_category in master_categories:
+            already_translated = master_category.translations.filter(language__code=target_language).exists()
+            if already_translated:
+                continue
+
+            greek_cat_translation = master_category.translations.filter(language__code='el').first()
+            if not greek_cat_translation:
+                continue
+
+            translated_cat_name = translator.translate_text(greek_cat_translation.name, target_lang=deepl_target).text
+
+            MasterCategoryTranslation.objects.update_or_create(
+                master_category=master_category,
+                language=language,
+                defaults={'name': translated_cat_name},
+            )
 
         return Response({"message": f"Μεταφράστηκαν {translated_count} προϊόντα."}, status=status.HTTP_200_OK)
