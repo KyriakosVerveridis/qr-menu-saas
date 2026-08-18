@@ -2,13 +2,18 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from apps.restaurants.models import Restaurant
-from apps.menus.models import MenuItem
+from apps.menus.models import MenuItem, MenuItemTranslation
 from .serializers import MenuItemCreateSerializer, PublicMenuItemSerializer
 
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from apps.categories.models import Category
+import deepl
+from apps.languages.models import Language
+from apps.billing.models import Subscription
+from rest_framework.views import APIView
+from django.conf import settings
 
 
 @api_view(['GET'])
@@ -97,3 +102,59 @@ def create_menu_item(request, pk=None):
         item = get_object_or_404(MenuItem, pk=pk, restaurant=user_restaurant)
         item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class TranslateMenuView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        restaurant_id = request.data.get('restaurant_id')
+        target_language = request.data.get('target_language')
+
+        if not restaurant_id or not target_language:
+            return Response({"error": "restaurant_id and target_language are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        restaurant = Restaurant.objects.filter(id=restaurant_id, owner=request.user).first()
+        if not restaurant:
+            return Response({"error": "Restaurant not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        has_premium = Subscription.objects.filter(restaurant=restaurant, status='active').exists()
+        if target_language not in ['el', 'en'] and not has_premium:
+            return Response({"error": "Αυτή η γλώσσα απαιτεί ενεργή συνδρομή Premium."}, status=status.HTTP_400_BAD_REQUEST)
+
+        language = Language.objects.filter(code=target_language).first()
+        if not language:
+            return Response({"error": "Language not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        translator = deepl.Translator(settings.DEEPL_API_KEY)
+        deepl_lang_map = {
+            'en': 'EN-GB',
+            'de': 'DE',
+            'fr': 'FR',
+            'es': 'ES',
+            'it': 'IT',
+            'ru': 'RU',
+            'bg': 'BG',
+            'ro': 'RO',
+            'tr': 'TR',
+        }
+        deepl_target = deepl_lang_map.get(target_language, target_language.upper())
+
+        items = MenuItem.objects.filter(restaurant=restaurant).prefetch_related('translations')
+        translated_count = 0
+
+        for item in items:
+            greek_translation = item.translations.filter(language__code='el').first()
+            if not greek_translation:
+                continue
+
+            translated_name = translator.translate_text(greek_translation.name, target_lang=deepl_target).text
+            translated_description = translator.translate_text(greek_translation.description, target_lang=deepl_target).text if greek_translation.description else ''
+
+            MenuItemTranslation.objects.update_or_create(
+                menu_item=item,
+                language=language,
+                defaults={'name': translated_name, 'description': translated_description},
+            )
+            translated_count += 1
+
+        return Response({"message": f"Μεταφράστηκαν {translated_count} προϊόντα."}, status=status.HTTP_200_OK)    
