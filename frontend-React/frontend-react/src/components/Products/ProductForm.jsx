@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export default function ProductForm({ restaurantId, onSave, onCancel, initialData = null }) {
+export default function ProductForm({ restaurantId, onSave, onCancel, initialData = null, defaultCategoryId = null }) {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState(null);
@@ -16,7 +16,7 @@ export default function ProductForm({ restaurantId, onSave, onCancel, initialDat
   };
 
   const [formData, setFormData] = useState({
-    category: initialData?.category || '',
+    category: initialData?.category || defaultCategoryId || '',
     price: initialData?.price || '',
     name_el: getTranslation('el').name,
     description_el: getTranslation('el').description,
@@ -124,19 +124,21 @@ export default function ProductForm({ restaurantId, onSave, onCancel, initialDat
         required
       />
 
-      <select
-        className="w-full p-2 border border-slate-200 rounded-xl"
-        value={formData.category}
-        onChange={e => setFormData({...formData, category: e.target.value})}
-        required
-      >
-        <option value="">-- Επιλέξτε Κατηγορία --</option>
-        {categories.map(c => (
-          <option key={c.id} value={c.id}>
-            {c.master_category_name}
-          </option>
-        ))}
-      </select>
+      {!defaultCategoryId && (
+        <select
+          className="w-full p-2 border border-slate-200 rounded-xl"
+          value={formData.category}
+          onChange={e => setFormData({...formData, category: e.target.value})}
+          required
+        >
+          <option value="">-- Επιλέξτε Κατηγορία --</option>
+          {categories.map(c => (
+            <option key={c.id} value={c.id}>
+              {c.master_category_name}
+            </option>
+          ))}
+        </select>
+      )}
 
       <div className="flex gap-3">
         <button type="submit" disabled={loading} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50">
