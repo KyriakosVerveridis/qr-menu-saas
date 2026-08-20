@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useRestaurant } from '../../context/RestaurantContext';
 import ProductForm from './ProductForm';
@@ -12,6 +12,8 @@ export default function ProductList() {
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const categoryScrollRef = useRef(null);
+  const savedScrollPosition = useRef(0);
 
   const fetchProducts = () => {
     if (!restaurantId) return;
@@ -59,12 +61,28 @@ export default function ProductList() {
   const filteredProducts = selectedCategory
     ? products.filter(p => p.category === selectedCategory.id)
     : products;
+  
+  const handleSelectCategory = (cat) => {
+    if (categoryScrollRef.current) {
+      savedScrollPosition.current = categoryScrollRef.current.scrollTop;
+    }
+    setSelectedCategory(cat);
+  };
+
+  const handleBackToCategories = () => {
+    setSelectedCategory(null);
+    setTimeout(() => {
+      if (categoryScrollRef.current) {
+        categoryScrollRef.current.scrollTop = savedScrollPosition.current;
+      }
+    }, 0);
+  };  
 
   return (
     <>
-      <div className={`md:col-span-1 md:pr-6 ${selectedCategory ? 'hidden md:block' : ''}`}>
+      <div ref={categoryScrollRef} className={`md:col-span-1 md:pr-6 overflow-y-auto ${selectedCategory ? 'hidden md:block' : ''}`}>
         <CategoryList
-          onSelectCategory={setSelectedCategory}
+          onSelectCategory={handleSelectCategory}
           selectedCategoryId={selectedCategory?.master_category}
         />
       </div>
@@ -73,7 +91,7 @@ export default function ProductList() {
         <div className="flex items-center gap-2 mb-4">
           {selectedCategory && (
             <button
-              onClick={() => setSelectedCategory(null)}
+              onClick={handleBackToCategories}
               className="md:hidden text-slate-600 hover:text-slate-900 text-xl"
             >
               ←
