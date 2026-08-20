@@ -4,7 +4,7 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export default function CategoryList() {
+export default function CategoryList({ onSelectCategory, selectedCategoryId }) {
   const { restaurantId } = useRestaurant();
   const [categories, setCategories] = useState([]);
   const [masterCategories, setMasterCategories] = useState([]);
@@ -116,10 +116,18 @@ export default function CategoryList() {
         + Κατηγορία
       </button>
         {categories.map(cat => (
-          <div key={cat.id} className="bg-white p-4 rounded-2xl border border-slate-200 flex justify-between items-center">
+          <div
+            key={cat.id}
+            onClick={() => onSelectCategory(cat)}
+            className={`p-4 rounded-2xl border-2 flex justify-between items-center cursor-pointer transition-colors ${
+              selectedCategoryId === cat.master_category
+                ? 'bg-emerald-50 border-emerald-300'
+                : 'bg-white border-slate-200 hover:border-slate-300'
+            }`}
+          >
             <span className="font-medium text-slate-800">{cat.master_category_name}</span>
             <button
-              onClick={() => handleDeleteCategory(cat.id)}
+              onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id); }}
               className="text-sm font-medium text-red-500 hover:text-red-700 transition-colors"
             >
               Διαγραφή
