@@ -3,26 +3,14 @@ import axios from 'axios';
 import { useRestaurant } from '../../context/RestaurantContext';
 import ProductForm from './ProductForm';
 import CategoryList from '../Category/CategoryList';
-import TranslateMenuButton from '../Translate/TranslateMenuButton';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function ProductList() {
   const { restaurantId } = useRestaurant();
-  const [activeTab, setActiveTab] = useState('categories');
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [restaurantName, setRestaurantName] = useState('');
-
-  useEffect(() => {
-    if (!restaurantId) return;
-    axios.get(`${API_URL}/api/restaurants/${restaurantId}/`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('access')}` }
-    })
-    .then(res => setRestaurantName(res.data.name))
-    .catch(err => console.error("Error fetching restaurant:", err));
-  }, [restaurantId]);
 
   const fetchProducts = () => {
     if (!restaurantId) return;
@@ -34,8 +22,8 @@ export default function ProductList() {
   };
 
   useEffect(() => {
-    if (activeTab === 'products') fetchProducts();
-  }, [restaurantId, activeTab]);
+    fetchProducts();
+  }, [restaurantId]);
 
   const handleEdit = (product) => {
     setEditingProduct(product);
@@ -67,74 +55,57 @@ export default function ProductList() {
   };
 
   return (
-    <div className="p-4">
-      <div className="mb-4 text-center">
-        <h1 className="text-lg font-bold text-slate-900">
-          Δημιουργία Μενού{restaurantName && ` - ${restaurantName}`}
-        </h1>
-      </div>
-
-      <div className="flex gap-1 mb-6 bg-slate-100 p-1 rounded-xl w-fit">
-        <button
-          onClick={() => setActiveTab('categories')}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-            activeTab === 'categories'
-              ? 'bg-white text-blue-600 shadow-sm'
-              : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Κατηγορίες
-        </button>
-        <button
-          onClick={() => setActiveTab('products')}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-            activeTab === 'products'
-              ? 'bg-white text-blue-600 shadow-sm'
-              : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Προϊόντα
-        </button>
-      </div>
-      {activeTab === 'categories' ? (
+    <>
+      <div className="md:col-span-1 md:pr-6">
         <CategoryList restaurantId={restaurantId} />
-      ) : (
-        <>
-          <div className="flex justify-between mb-4">
-            <h2 className="text-xl font-bold">Προϊόντα Καταστήματος</h2>
-            <button onClick={handleAdd} className="bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
-              + Προσθήκη Προϊόντος
-            </button>
-          </div>
+      </div>
 
-          <div className="mb-4">
-            <TranslateMenuButton restaurantId={restaurantId} />
-          </div>
-          {showForm && (
-            <ProductForm
-              key={editingProduct?.id || 'new'}
-              restaurantId={restaurantId}
-              initialData={editingProduct}
-              onSave={() => { setShowForm(false); fetchProducts(); }}
-              onCancel={() => setShowForm(false)}
-            />
-          )}
-          <div className="grid gap-3 mt-4">
-            {products.map(p => (
-              <div key={p.id} className="bg-white p-4 rounded-2xl border border-slate-200 flex justify-between items-center">
-                <div>
-                  <h3 className="font-medium text-slate-800">{getProductName(p)}</h3>
-                  <p className="text-sm text-slate-500">{p.price}€</p>
-                </div>
-                <div className="flex gap-4 text-sm font-medium">
-                  <button onClick={() => handleEdit(p)} className="text-blue-600 hover:text-blue-700 transition-colors">Επεξεργασία</button>
-                  <button onClick={() => handleDelete(p.id)} className="text-red-500 hover:text-red-700 transition-colors">Διαγραφή</button>
-                </div>
+      <div className="md:col-span-2 md:pl-6">
+        <h3 className="font-bold mb-4">Προϊόντα</h3>
+
+        <button
+          onClick={handleAdd}
+          className="w-full bg-emerald-50 text-emerald-700 border-2 border-dashed border-emerald-200 px-4 py-3 rounded-xl font-semibold hover:bg-emerald-100 transition-colors"
+        >
+          + Προϊόν
+        </button>
+
+        {showForm && (
+          <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[85vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="font-bold text-slate-900">
+                  {editingProduct ? 'Επεξεργασία Προϊόντος' : 'Νέο Προϊόν'}
+                </h4>
+                <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-700 text-xl leading-none">×</button>
               </div>
-            ))}
+
+              <ProductForm
+                key={editingProduct?.id || 'new'}
+                restaurantId={restaurantId}
+                initialData={editingProduct}
+                onSave={() => { setShowForm(false); fetchProducts(); }}
+                onCancel={() => setShowForm(false)}
+              />
+            </div>
           </div>
-        </>
-      )}
-    </div>
+        )}
+
+        <div className="grid gap-3 mt-4">
+          {products.map(p => (
+            <div key={p.id} className="bg-white p-4 rounded-2xl border border-slate-200 flex justify-between items-center">
+              <div>
+                <h3 className="font-medium text-slate-800">{getProductName(p)}</h3>
+                <p className="text-sm text-slate-500">{p.price}€</p>
+              </div>
+              <div className="flex gap-4 text-sm font-medium">
+                <button onClick={() => handleEdit(p)} className="text-blue-600 hover:text-blue-700 transition-colors">Επεξεργασία</button>
+                <button onClick={() => handleDelete(p.id)} className="text-red-500 hover:text-red-700 transition-colors">Διαγραφή</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
