@@ -1,3 +1,10 @@
+const allergenEmojis = {
+  gluten: '🌾', crustaceans: '🦐', eggs: '🥚', fish: '🐟',
+  peanuts: '🥜', soybeans: '🫘', milk: '🥛', nuts: '🌰',
+  celery: '🥬', mustard: '🟡', sesame: '⚪', sulphites: '🍷',
+  lupin: '🫛', molluscs: '🦪',
+};
+
 export default function ProductDetailSheet({ product, translation, categoryName, isDark, onClose }) {
   if (!product) return null;
 
@@ -62,6 +69,26 @@ export default function ProductDetailSheet({ product, translation, categoryName,
             <p className={`text-sm leading-relaxed mt-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
               {translation.description}
             </p>
+          )}
+
+          {product.allergens && product.allergens.length > 0 && (
+            <div className="mt-4">
+              <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                Αλλεργιογόνα
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {product.allergens.map(a => (
+                  <span
+                    key={a.id}
+                    className={`text-xs font-medium px-3 py-1.5 rounded-full ${
+                      isDark ? 'bg-neutral-800 text-gray-300' : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    {allergenEmojis[a.code] || ''} {a.name_el}
+                  </span>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </div>

@@ -7,6 +7,13 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const langLabels = { el: 'ΕΛΛΗΝΙΚΑ', en: 'ENGLISH', de: 'DEUTSCH', fr: 'FRANÇAIS', bg: 'БЪЛГАРСКИ', ro: 'ROMÂNĂ', tr: 'TÜRKÇE' };
 
+const allergenEmojis = {
+  gluten: '🌾', crustaceans: '🦐', eggs: '🥚', fish: '🐟',
+  peanuts: '🥜', soybeans: '🫘', milk: '🥛', nuts: '🌰',
+  celery: '🥬', mustard: '🟡', sesame: '⚪', sulphites: '🍷',
+  lupin: '🫛', molluscs: '🦪',
+};
+
 export default function MenuPage() {
   const { slug } = useParams();
   const [restaurantName, setRestaurantName] = useState(null);
@@ -233,14 +240,19 @@ export default function MenuPage() {
                   >
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-lg leading-tight">{t.name}</h3>
-                      {t.description && (
-                        <p className={`text-sm mt-1.5 leading-relaxed line-clamp-2 min-h-[2.5rem] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                          {t.description}
-                        </p>
-                      )}
-                      <span className={`block text-base  mt-7 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                        {item.price}€
-                      </span>
+                        {t.description && (
+                          <p className={`text-sm mt-1.5 leading-relaxed line-clamp-2 min-h-[2.5rem] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {t.description}
+                          </p>
+                        )}
+                        {item.allergens && item.allergens.length > 0 && (
+                          <p className={`text-xs font-medium mt-1.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                            Περιέχει αλλεργιογόνα
+                          </p>
+                        )}
+                        <span className={`block text-base mt-7 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                          {item.price}€
+                        </span>
                     </div>
                     <div className="w-44 h-28 rounded-2xl overflow-hidden bg-gray-200 flex-shrink-0">
                       <img
