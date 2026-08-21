@@ -3,8 +3,17 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+const allergenEmojis = {
+  gluten: '🌾', crustaceans: '🦐', eggs: '🥚', fish: '🐟',
+  peanuts: '🥜', soybeans: '🫘', milk: '🥛', nuts: '🌰',
+  celery: '🥬', mustard: '🟡', sesame: '⚪', sulphites: '🍷',
+  lupin: '🫛', molluscs: '🦪',
+};
+
 export default function ProductForm({ restaurantId, onSave, onCancel, initialData = null, defaultCategoryId = null }) {
   const [categories, setCategories] = useState([]);
+  const [allergens, setAllergens] = useState([]);
+  const [selectedAllergens, setSelectedAllergens] = useState(initialData?.allergens?.map(a => a.id) || []);
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(initialData?.image || null);
@@ -31,6 +40,20 @@ export default function ProductForm({ restaurantId, onSave, onCancel, initialDat
     .catch(err => console.error("Error fetching categories:", err));
   }, [restaurantId]);
 
+  useEffect(() => {
+    axios.get(`${API_URL}/api/menu/allergens/`)
+    .then(res => setAllergens(res.data))
+    .catch(err => console.error("Error fetching allergens:", err));
+  }, []);
+
+  const toggleAllergen = (allergenId) => {
+    setSelectedAllergens(prev =>
+      prev.includes(allergenId)
+        ? prev.filter(id => id !== allergenId)
+        : [...prev, allergenId]
+    );
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -51,6 +74,7 @@ export default function ProductForm({ restaurantId, onSave, onCancel, initialDat
     form.append('price', formData.price);
     form.append('restaurant', restaurantId);
     form.append('translations', JSON.stringify(translations));
+    form.append('allergen_ids', JSON.stringify(selectedAllergens));
     if (imageFile) {
       form.append('image_file', imageFile);
     }
@@ -69,7 +93,7 @@ export default function ProductForm({ restaurantId, onSave, onCancel, initialDat
       }
       onSave();
     } catch (err) {
-      console.error("Error saving product:", err.response?.data || err);
+      console.error("Error saving product:", JSON.stringify(err.response?.data));
       alert("Αποτυχία αποθήκευσης. Ελέγξτε την κονσόλα.");
     } finally {
       setLoading(false);
@@ -140,8 +164,31 @@ export default function ProductForm({ restaurantId, onSave, onCancel, initialDat
         </select>
       )}
 
+      <div>
+        <label className="text-sm font-medium text-slate-600 mb-2 block">Αλλεργιογόνα (προαιρετικό)</label>
+        <div className="grid grid-cols-2 gap-2">
+          {allergens.map(a => {
+            const isSelected = selectedAllergens.includes(a.id);
+            return (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => toggleAllergen(a.id)}
+                className={`text-left px-3 py-2 rounded-xl border-2 text-sm font-medium transition-colors ${
+                  isSelected
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                    : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                {allergenEmojis[a.code] || ''} {a.name_el}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="flex gap-3">
-        <button type="submit" disabled={loading} className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50">
+        <button type="submit" disabled={loading} className="flex-1 bg-emerald-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50">
           {loading ? 'Αποθήκευση...' : 'Αποθήκευση'}
         </button>
         <button type="button" onClick={onCancel} className="flex-1 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-semibold hover:bg-slate-200 transition-colors">

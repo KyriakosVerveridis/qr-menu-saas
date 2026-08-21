@@ -2,8 +2,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from apps.restaurants.models import Restaurant
-from apps.menus.models import MenuItem, MenuItemTranslation
-from .serializers import MenuItemCreateSerializer, PublicMenuItemSerializer
+from apps.menus.models import MenuItem, MenuItemTranslation, Allergen
+from .serializers import AllergenSerializer, MenuItemCreateSerializer, PublicMenuItemSerializer
 
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -205,3 +205,9 @@ class ReorderMenuItemsView(APIView):
             MenuItem.objects.filter(id=item_id, restaurant__owner=request.user).update(order=index)
 
         return Response({"message": "Η σειρά ενημερώθηκε."}, status=status.HTTP_200_OK)    
+
+@api_view(['GET'])
+def allergen_list(request):
+    allergens = Allergen.objects.all()
+    serializer = AllergenSerializer(allergens, many=True)
+    return Response(serializer.data)    
