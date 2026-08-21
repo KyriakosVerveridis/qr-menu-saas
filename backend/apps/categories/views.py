@@ -48,3 +48,14 @@ class CategoryListView(APIView):
         category = get_object_or_404(Category, pk=pk, restaurant__owner=request.user)
         category.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class ReorderCategoriesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        category_ids = request.data.get('category_ids', [])
+
+        for index, category_id in enumerate(category_ids):
+            Category.objects.filter(id=category_id, restaurant__owner=request.user).update(order=index)
+
+        return Response({"message": "Η σειρά ενημερώθηκε."}, status=status.HTTP_200_OK)    

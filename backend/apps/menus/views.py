@@ -188,3 +188,14 @@ class TranslateMenuView(APIView):
             )
 
         return Response({"message": f"Μεταφράστηκαν {translated_count} προϊόντα."}, status=status.HTTP_200_OK)
+
+class ReorderMenuItemsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        item_ids = request.data.get('item_ids', [])
+
+        for index, item_id in enumerate(item_ids):
+            MenuItem.objects.filter(id=item_id, restaurant__owner=request.user).update(order=index)
+
+        return Response({"message": "Η σειρά ενημερώθηκε."}, status=status.HTTP_200_OK)    
