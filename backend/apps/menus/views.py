@@ -38,6 +38,10 @@ def public_menu(request, slug):
         .prefetch_related('category__master_category__translations', 'translations')
     )
 
+    category_order = {}
+    for cat in Category.objects.filter(restaurant=restaurant):
+        category_order[cat.master_category_id] = cat.order
+
     groups = {}
     for item in items:
         master_category = item.category.master_category
@@ -48,7 +52,9 @@ def public_menu(request, slug):
             }
         groups[master_category.id]['items'].append(PublicMenuItemSerializer(item).data)
 
-    return Response(list(groups.values()))
+    sorted_groups = sorted(groups.values(), key=lambda g: category_order.get(g['category']['id'], 0))
+
+    return Response(sorted_groups)
 
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
