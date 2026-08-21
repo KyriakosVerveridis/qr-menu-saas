@@ -14,6 +14,22 @@ class Allergen(models.Model):
         return self.name_el
 
 
+class AllergenTranslation(models.Model):
+    allergen = models.ForeignKey(
+        Allergen,
+        related_name='translations',
+        on_delete=models.CASCADE
+    )
+    language = models.ForeignKey(Language, on_delete=models.PROTECT)
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        unique_together = ('allergen', 'language')
+
+    def __str__(self):
+        return f"[{self.language.code}] {self.name}"
+
+
 class MenuItem(models.Model):
     """Container model - το όνομα/περιγραφή ζουν στο MenuItemTranslation."""
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name="menu_items")

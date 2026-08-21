@@ -14,6 +14,19 @@ const allergenEmojis = {
   lupin: '🫛', molluscs: '🦪',
 };
 
+const allergenWarningText = {
+  el: 'Περιέχει αλλεργιογόνα',
+  en: 'Contains allergens',
+  de: 'Enthält Allergene',
+  fr: 'Contient des allergènes',
+  es: 'Contiene alérgenos',
+  it: 'Contiene allergeni',
+  ru: 'Содержит аллергены',
+  bg: 'Съдържа алергени',
+  ro: 'Conține alergeni',
+  tr: 'Alerjen içerir',
+};
+
 export default function MenuPage() {
   const { slug } = useParams();
   const [restaurantName, setRestaurantName] = useState(null);
@@ -247,7 +260,7 @@ export default function MenuPage() {
                         )}
                         {item.allergens && item.allergens.length > 0 && (
                           <p className={`text-xs font-medium mt-1.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                            Περιέχει αλλεργιογόνα
+                            {allergenWarningText[currentLang] || allergenWarningText.el}
                           </p>
                         )}
                         <span className={`block text-base mt-7 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -275,6 +288,7 @@ export default function MenuPage() {
           product={selectedProduct}
           translation={getTranslation(selectedProduct.translations, currentLang)}
           categoryName={selectedCategoryName}
+          currentLang={currentLang}
           isDark={isDark}
           onClose={closeProduct}
         />

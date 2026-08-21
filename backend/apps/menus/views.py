@@ -208,6 +208,6 @@ class ReorderMenuItemsView(APIView):
 
 @api_view(['GET'])
 def allergen_list(request):
-    allergens = Allergen.objects.all()
+    allergens = Allergen.objects.all().prefetch_related('translations')
     serializer = AllergenSerializer(allergens, many=True)
     return Response(serializer.data)    
