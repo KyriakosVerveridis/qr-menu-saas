@@ -5,7 +5,7 @@ const allergenEmojis = {
   lupin: '🫛', molluscs: '🦪',
 };
 
-export default function ProductDetailSheet({ product, translation, categoryName, isDark, onClose }) {
+export default function ProductDetailSheet({ product, translation, categoryName, currentLang, isDark, onClose }) {
   if (!product) return null;
 
   return (
@@ -84,7 +84,7 @@ export default function ProductDetailSheet({ product, translation, categoryName,
                       isDark ? 'bg-neutral-800 text-gray-300' : 'bg-gray-100 text-gray-700'
                     }`}
                   >
-                    {allergenEmojis[a.code] || ''} {a.name_el}
+                    {allergenEmojis[a.code] || ''} {a.translations?.find(t => t.language_code === currentLang)?.name || a.name_el}
                   </span>
                 ))}
               </div>

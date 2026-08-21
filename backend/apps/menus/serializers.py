@@ -1,14 +1,24 @@
 import json
 from rest_framework import serializers
 import cloudinary.uploader
-from .models import MenuItem, MenuItemTranslation, Allergen
+from .models import AllergenTranslation, MenuItem, MenuItemTranslation, Allergen
 from apps.categories.models import Category
 from apps.languages.models import Language
 
+class AllergenTranslationSerializer(serializers.ModelSerializer):
+    language_code = serializers.CharField(source='language.code')
+
+    class Meta:
+        model = AllergenTranslation
+        fields = ['language_code', 'name']
+
+
 class AllergenSerializer(serializers.ModelSerializer):
+    translations = AllergenTranslationSerializer(many=True, read_only=True)
+
     class Meta:
         model = Allergen
-        fields = ['id', 'code', 'name_el', 'name_en']
+        fields = ['id', 'code', 'name_el', 'name_en', 'translations']
 
 class MenuItemTranslationSerializer(serializers.ModelSerializer):
     language_code = serializers.CharField(source='language.code')
