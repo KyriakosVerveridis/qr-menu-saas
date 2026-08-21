@@ -1,8 +1,69 @@
 import { useRestaurant } from '../../context/RestaurantContext';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const API_URL = import.meta.env.VITE_API_URL;
+
+function SortableCategory({ cat, selectedCategoryId, onSelectCategory, handleDeleteCategory }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      className={`p-4 rounded-2xl border-2 flex items-center gap-3 transition-colors ${
+        isDragging
+          ? 'bg-emerald-100 border-emerald-400'
+          : selectedCategoryId === cat.master_category
+          ? 'bg-emerald-50 border-emerald-300'
+          : 'bg-white border-slate-200 hover:border-slate-300'
+      }`}
+    >
+      <span
+        {...listeners}
+        style={{ touchAction: 'none' }}
+        className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 text-xl px-1 select-none"
+      >
+        ⋮⋮
+      </span>
+
+      <span
+        onClick={() => onSelectCategory(cat)}
+        className="flex-1 font-medium text-slate-800 cursor-pointer"
+      >
+        {cat.master_category_name}
+      </span>
+
+      <button
+        onClick={() => handleDeleteCategory(cat.id)}
+        className="text-sm font-medium text-red-500 hover:text-red-700 transition-colors"
+      >
+        Διαγραφή
+      </button>
+    </div>
+  );
+}
 
 export default function CategoryList({ onSelectCategory, selectedCategoryId }) {
   const { restaurantId } = useRestaurant();
@@ -10,6 +71,11 @@ export default function CategoryList({ onSelectCategory, selectedCategoryId }) {
   const [masterCategories, setMasterCategories] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
+  );
 
   const fetchCategories = () => {
     if (!restaurantId) return;
@@ -50,21 +116,6 @@ export default function CategoryList({ onSelectCategory, selectedCategoryId }) {
     fetchMasterCategories();
   }, [restaurantId]);
 
-  const handleAddCategory = (masterCategoryId) => {
-    axios.post(`${API_URL}/api/categories/my-categories/`,
-      { master_category: masterCategoryId, restaurant: restaurantId },
-      { headers: { Authorization: `Bearer ${localStorage.getItem('access')}` } }
-    )
-    .then(() => {
-      setShowModal(false);
-      fetchCategories();
-    })
-    .catch(err => {
-      const message = err.response?.data?.error || "Αποτυχία προσθήκης κατηγορίας.";
-      alert(message);
-    });
-  };
-
   const handleDeleteCategory = (categoryId) => {
     if (!window.confirm("Θέλεις σίγουρα να αφαιρέσεις αυτή την κατηγορία από το κατάστημα;")) return;
     axios.delete(`${API_URL}/api/categories/my-categories/${categoryId}/`, {
@@ -84,7 +135,7 @@ export default function CategoryList({ onSelectCategory, selectedCategoryId }) {
 
   const usedMasterCategoryIds = categories.map(c => c.master_category);
   const availableMasterCategories = masterCategories.filter(mc => !usedMasterCategoryIds.includes(mc.id));
-  
+
   const toggleSelection = (masterCategoryId) => {
     setSelectedIds(prev =>
       prev.includes(masterCategoryId)
@@ -104,38 +155,49 @@ export default function CategoryList({ onSelectCategory, selectedCategoryId }) {
     setShowModal(false);
     fetchCategories();
   };
+
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = categories.findIndex(c => c.id === active.id);
+    const newIndex = categories.findIndex(c => c.id === over.id);
+    const newCategories = arrayMove(categories, oldIndex, newIndex);
+    setCategories(newCategories);
+
+    const categoryIds = newCategories.map(c => c.id);
+    await axios.post(`${API_URL}/api/categories/my-categories/reorder/`,
+      { category_ids: categoryIds },
+      { headers: { Authorization: `Bearer ${localStorage.getItem('access')}` } }
+    ).catch(err => console.error("Error reordering:", err));
+  };
+
   return (
     <div>
       <h3 className="font-bold mb-4">Κατηγορίες Μενού</h3>
 
-      <div className="grid gap-3 mb-4">
       <button
         onClick={() => setShowModal(true)}
-        className="w-full bg-emerald-50 text-emerald-700 border-2 border-dashed border-emerald-200 px-4 py-3 rounded-xl font-semibold hover:bg-emerald-100 transition-colors"
+        className="w-full bg-emerald-50 text-emerald-700 border-2 border-dashed border-emerald-200 px-4 py-3 rounded-xl font-semibold hover:bg-emerald-100 transition-colors mb-4"
       >
         + Κατηγορία
       </button>
-        {categories.map(cat => (
-          <div
-            key={cat.id}
-            onClick={() => onSelectCategory(cat)}
-            className={`p-4 rounded-2xl border-2 flex justify-between items-center cursor-pointer transition-colors ${
-              selectedCategoryId === cat.master_category
-                ? 'bg-emerald-50 border-emerald-300'
-                : 'bg-white border-slate-200 hover:border-slate-300'
-            }`}
-          >
-            <span className="font-medium text-slate-800">{cat.master_category_name}</span>
-            <button
-              onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id); }}
-              className="text-sm font-medium text-red-500 hover:text-red-700 transition-colors"
-            >
-              Διαγραφή
-            </button>
-          </div>
-        ))}
-      </div>
 
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={categories.map(c => c.id)} strategy={verticalListSortingStrategy}>
+          <div className="grid gap-3">
+            {categories.map(cat => (
+              <SortableCategory
+                key={cat.id}
+                cat={cat}
+                selectedCategoryId={selectedCategoryId}
+                onSelectCategory={onSelectCategory}
+                handleDeleteCategory={handleDeleteCategory}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4">

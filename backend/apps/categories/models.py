@@ -39,10 +39,12 @@ class Category(models.Model):
         on_delete=models.PROTECT,
         related_name="categories"
     )
+    order = models.IntegerField(default=0)
 
     class Meta:
         verbose_name_plural = "Categories"
         unique_together = ('restaurant', 'master_category')
+        ordering = ['order']
 
     def __str__(self):
         return f"{self.restaurant.name} - {self.master_category}"
