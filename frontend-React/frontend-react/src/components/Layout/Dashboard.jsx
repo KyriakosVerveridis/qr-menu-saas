@@ -3,16 +3,17 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopHeader from './TopHeader';
 import PhonePreview from './PhonePreview';
+import MobileBottomNav from './MobileBottomNav';
 
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden text-slate-900">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar />
 
       <main className="flex-1 flex flex-col h-full overflow-hidden">
-        <TopHeader onMenuClick={() => setSidebarOpen(true)} />
+        <TopHeader />
 
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 overflow-y-auto p-4 md:p-8">
@@ -26,6 +27,7 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+      <MobileBottomNav />
     </div>
   );
 }

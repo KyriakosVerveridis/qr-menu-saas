@@ -68,26 +68,12 @@ export default function Sidebar({ isOpen, onClose }) {
 
   return (
     <>
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={onClose}
-        />
-      )}
-
-      <div
-        className={`fixed md:static top-0 left-0 h-screen w-64 bg-white border-r border-slate-200 p-4 flex flex-col z-50 transition-transform duration-200 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-        }`}
-      >
+      <div className="hidden md:flex md:static top-0 left-0 h-screen w-64 bg-white border-r border-slate-200 p-4 flex-col z-50">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
             <span className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white text-sm">M</span>
             MenuApp
           </h2>
-          <button onClick={onClose} className="md:hidden text-slate-400 hover:text-slate-700 text-2xl leading-none">
-            ×
-          </button>
         </div>
 
         <div className="mb-2">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
+import { Store } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -41,11 +42,14 @@ export default function CreateStore({ isOpen, onClose, onStoreCreated }) {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
       <div className="w-full max-w-md my-8">
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 space-y-4 shadow-xl">
-          <div className="text-center mb-2">
-            <div className="w-14 h-14 bg-emerald-600 rounded-2xl mx-auto mb-3 flex items-center justify-center text-white text-xl">
-              🏪
+          <div className="flex justify-between items-start mb-2">
+            <div className="flex-1 text-center">
+              <div className="w-14 h-14 bg-emerald-100 rounded-2xl mx-auto mb-3 flex items-center justify-center text-emerald-600">
+                <Store size={28} />
+              </div>
+              <h2 className="text-xl font-bold text-slate-900">Νέο Κατάστημα</h2>
             </div>
-            <h2 className="text-xl font-bold text-slate-900">Νέο Κατάστημα</h2>
+            <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-700 text-xl leading-none">×</button>
           </div>
 
           <div>
@@ -103,14 +107,9 @@ export default function CreateStore({ isOpen, onClose, onStoreCreated }) {
             />
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <button type="submit" disabled={loading} className="flex-1 bg-emerald-600 text-white py-2 rounded-xl font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50">
-              {loading ? 'Αποθήκευση...' : 'Δημιουργία'}
-            </button>
-            <button type="button" onClick={onClose} className="flex-1 bg-slate-100 text-slate-700 py-2 rounded-xl font-semibold hover:bg-slate-200 transition-colors">
-              Άκυρο
-            </button>
-          </div>
+          <button type="submit" disabled={loading} className="w-full bg-emerald-600 text-white py-2 rounded-xl font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 mt-2">
+            {loading ? 'Αποθήκευση...' : 'Δημιουργία'}
+          </button>
         </form>
       </div>
     </div>,
