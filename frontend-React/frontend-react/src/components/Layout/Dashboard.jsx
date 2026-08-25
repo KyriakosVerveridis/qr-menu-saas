@@ -16,7 +16,7 @@ export default function Dashboard() {
         <TopHeader />
 
         <div className="flex-1 flex overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-4 md:p-8">
+          <div className="flex-1 overflow-y-auto p-4 pb-24 md:p-8">
           <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-y-6 md:divide-x md:divide-slate-300">
             <Outlet />
           </div>
